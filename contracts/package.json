@@ -1,0 +1,25 @@
+{
+  "name": "padd-r",
+  "version": "1.0.0",
+  "description": "PADD-R Smart Contracts",
+  "main": "index.js",
+  "scripts": {
+    "test": "hardhat test",
+    "compile": "hardhat compile",
+    "deploy:token": "hardhat run scripts/deploy-token.js --network",
+    "deploy:tier": "hardhat run scripts/deploy-tier-calculator.js --network",
+    "deploy:stake": "hardhat run scripts/deploy-stake-manager.js --network",
+    "deploy:all": "hardhat run scripts/deploy.js --network",
+    "verify:token": "hardhat verify --network",
+    "verify:tier": "hardhat verify --network",
+    "verify:stake": "hardhat verify --network"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox": "^4.0.0",
+    "dotenv": "^16.0.3",
+    "hardhat": "^2.19.4"
+  }
+}
