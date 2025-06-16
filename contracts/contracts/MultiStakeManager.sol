@@ -4,15 +4,27 @@ pragma solidity ^0.8.20;
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
-import "./TierCalculator.sol";
 import "./DateUtils.sol";
+
+using DateUtils for uint64;
+
+interface IPADNFTFactory {
+    function mintNFT(
+        address to,
+        uint256 positionId,
+        uint256 amountStaked,
+        uint256 lockDurationMonths,
+        uint256 startTimestamp,
+        uint256 monthIndex,
+        uint256 nextMintOn
+    ) external returns (uint256);
+}
 
 /**
  * @title MultiStakeManager
  * @dev Manages multiple staking positions per wallet
  */
 contract MultiStakeManager is AccessControl, ReentrancyGuard {
-    using TierCalculator for TierCalculator.Tier;
     using DateUtils for uint256;
 
     bytes32 public constant ADMIN_ROLE = keccak256("ADMIN_ROLE");
@@ -44,6 +56,9 @@ contract MultiStakeManager is AccessControl, ReentrancyGuard {
     event PositionCreated(uint256 indexed positionId, address indexed owner, uint256 amount, uint256 duration);
     event PositionClosed(uint256 indexed positionId, address indexed owner, uint256 amount, uint256 reward);
     event EmergencyWithdrawn(uint256 indexed positionId, address indexed owner, uint256 amount);
+    event NFTFactorySet(address indexed newNFTFactory);
+
+    address public nftFactory;
 
     constructor(address _stakingToken) {
         require(_stakingToken != address(0), "Zero address");
@@ -91,6 +106,19 @@ contract MultiStakeManager is AccessControl, ReentrancyGuard {
         require(stakingToken.transferFrom(msg.sender, address(this), amount), "Transfer failed");
 
         emit PositionCreated(positionId, msg.sender, amount, duration);
+
+        // Mint NFT if factory is set
+        if (nftFactory != address(0)) {
+            IPADNFTFactory(nftFactory).mintNFT(
+                msg.sender,
+                positionId,
+                amount,
+                duration / 30 days,
+                startTime,
+                0,
+                startTime + 30 days
+            );
+        }
     }
 
     function closePosition(uint256 positionId) external nonReentrant {
@@ -153,5 +181,43 @@ contract MultiStakeManager is AccessControl, ReentrancyGuard {
         
         userPositionsArray.pop();
         delete positionIndexInUserArray[positionId];
+    }
+
+    function setNFTFactory(address _nftFactory) external onlyRole(ADMIN_ROLE) {
+        require(_nftFactory != address(0), "Zero address");
+        nftFactory = _nftFactory;
+        emit NFTFactorySet(_nftFactory);
+    }
+
+    /**
+     * @dev Mint next NFT for a position (called by TierMonitor)
+     * @param positionId ID of the position
+     */
+    function mintNextNFT(uint256 positionId) external {
+        Position storage position = positions[positionId];
+        require(position.isActive, "Position not active");
+        require(block.timestamp >= position.nextMintAt, "Too early");
+        require(msg.sender == nftFactory || msg.sender == address(this), "Not authorized");
+
+        // Calculate next mint time
+        uint256 nextMintAt = position.startTime.addMonths(position.monthIndex + 1);
+        require(nextMintAt <= position.startTime + position.duration, "Position expired");
+
+        // Update position
+        position.monthIndex++;
+        position.nextMintAt = uint32(nextMintAt);
+
+        // Mint NFT if factory is set
+        if (nftFactory != address(0)) {
+            IPADNFTFactory(nftFactory).mintNFT(
+                position.owner,
+                positionId,
+                position.amount,
+                position.duration / 30 days,
+                position.startTime,
+                position.monthIndex,
+                nextMintAt
+            );
+        }
     }
 } 

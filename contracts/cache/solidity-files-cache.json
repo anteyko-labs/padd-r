@@ -38,8 +38,8 @@
       ]
     },
     "C:\\Users\\LENOVO\\Desktop\\PADD-R\\contracts\\contracts\\MultiStakeManager.sol": {
-      "lastModificationDate": 1749888603477,
-      "contentHash": "751dc7db0fcdf9905f8d851279766756",
+      "lastModificationDate": 1750075797616,
+      "contentHash": "a64ac4e355db68f55f598c07bb464898",
       "sourceName": "contracts/MultiStakeManager.sol",
       "solcConfig": {
         "version": "0.8.28",
@@ -69,20 +69,20 @@
         "@openzeppelin/contracts/token/ERC20/IERC20.sol",
         "@openzeppelin/contracts/access/AccessControl.sol",
         "@openzeppelin/contracts/utils/ReentrancyGuard.sol",
-        "./TierCalculator.sol",
         "./DateUtils.sol"
       ],
       "versionPragmas": [
         "^0.8.20"
       ],
       "artifacts": [
+        "IPADNFTFactory",
         "MultiStakeManager"
       ]
     },
-    "C:\\Users\\LENOVO\\Desktop\\PADD-R\\contracts\\contracts\\TierCalculator.sol": {
-      "lastModificationDate": 1749885444376,
-      "contentHash": "e1daf0b806e3254d6ada49cf14c2465e",
-      "sourceName": "contracts/TierCalculator.sol",
+    "C:\\Users\\LENOVO\\Desktop\\PADD-R\\contracts\\node_modules\\@openzeppelin\\contracts\\utils\\ReentrancyGuard.sol": {
+      "lastModificationDate": 1750064098065,
+      "contentHash": "190613e556d509d9e9a0ea43dc5d891d",
+      "sourceName": "@openzeppelin/contracts/utils/ReentrancyGuard.sol",
       "solcConfig": {
         "version": "0.8.28",
         "settings": {
@@ -112,12 +112,12 @@
         "^0.8.20"
       ],
       "artifacts": [
-        "TierCalculator"
+        "ReentrancyGuard"
       ]
     },
     "C:\\Users\\LENOVO\\Desktop\\PADD-R\\contracts\\node_modules\\@openzeppelin\\contracts\\access\\AccessControl.sol": {
-      "lastModificationDate": 1749885806843,
-      "contentHash": "4c80b7fdf559a9a348e832a57d072a0b",
+      "lastModificationDate": 1750064095830,
+      "contentHash": "849b15469d8e2bd01b49e6c632e448e7",
       "sourceName": "@openzeppelin/contracts/access/AccessControl.sol",
       "solcConfig": {
         "version": "0.8.28",
@@ -156,8 +156,8 @@
       ]
     },
     "C:\\Users\\LENOVO\\Desktop\\PADD-R\\contracts\\node_modules\\@openzeppelin\\contracts\\token\\ERC20\\IERC20.sol": {
-      "lastModificationDate": 1749885807003,
-      "contentHash": "5517c8678c18eb1a8ba58810e7ca39ca",
+      "lastModificationDate": 1750064097703,
+      "contentHash": "8f19f64d2adadf448840908bbaf431c8",
       "sourceName": "@openzeppelin/contracts/token/ERC20/IERC20.sol",
       "solcConfig": {
         "version": "0.8.28",
@@ -191,10 +191,10 @@
         "IERC20"
       ]
     },
-    "C:\\Users\\LENOVO\\Desktop\\PADD-R\\contracts\\node_modules\\@openzeppelin\\contracts\\utils\\ReentrancyGuard.sol": {
-      "lastModificationDate": 1749885807068,
-      "contentHash": "a92331adac11b453a4de0323fc948119",
-      "sourceName": "@openzeppelin/contracts/utils/ReentrancyGuard.sol",
+    "C:\\Users\\LENOVO\\Desktop\\PADD-R\\contracts\\node_modules\\@openzeppelin\\contracts\\access\\IAccessControl.sol": {
+      "lastModificationDate": 1750064097356,
+      "contentHash": "80621031deacf7066ec81277f9b1463a",
+      "sourceName": "@openzeppelin/contracts/access/IAccessControl.sol",
       "solcConfig": {
         "version": "0.8.28",
         "settings": {
@@ -224,11 +224,11 @@
         "^0.8.20"
       ],
       "artifacts": [
-        "ReentrancyGuard"
+        "IAccessControl"
       ]
     },
     "C:\\Users\\LENOVO\\Desktop\\PADD-R\\contracts\\node_modules\\@openzeppelin\\contracts\\utils\\Context.sol": {
-      "lastModificationDate": 1749885806871,
+      "lastModificationDate": 1750064096338,
       "contentHash": "67bfbc07588eb8683b3fd8f6f909563e",
       "sourceName": "@openzeppelin/contracts/utils/Context.sol",
       "solcConfig": {
@@ -263,45 +263,9 @@
         "Context"
       ]
     },
-    "C:\\Users\\LENOVO\\Desktop\\PADD-R\\contracts\\node_modules\\@openzeppelin\\contracts\\access\\IAccessControl.sol": {
-      "lastModificationDate": 1749885806966,
-      "contentHash": "e3a14b0714caaaa82d58fa0bc3756079",
-      "sourceName": "@openzeppelin/contracts/access/IAccessControl.sol",
-      "solcConfig": {
-        "version": "0.8.28",
-        "settings": {
-          "optimizer": {
-            "enabled": true,
-            "runs": 200
-          },
-          "evmVersion": "paris",
-          "outputSelection": {
-            "*": {
-              "*": [
-                "abi",
-                "evm.bytecode",
-                "evm.deployedBytecode",
-                "evm.methodIdentifiers",
-                "metadata"
-              ],
-              "": [
-                "ast"
-              ]
-            }
-          }
-        }
-      },
-      "imports": [],
-      "versionPragmas": [
-        "^0.8.20"
-      ],
-      "artifacts": [
-        "IAccessControl"
-      ]
-    },
     "C:\\Users\\LENOVO\\Desktop\\PADD-R\\contracts\\node_modules\\@openzeppelin\\contracts\\utils\\introspection\\ERC165.sol": {
-      "lastModificationDate": 1749885806896,
-      "contentHash": "6a55c353946e471d9792965d06208295",
+      "lastModificationDate": 1750064096870,
+      "contentHash": "7c03c1e37c3dc24eafb76dc2b8a5c3a6",
       "sourceName": "@openzeppelin/contracts/utils/introspection/ERC165.sol",
       "solcConfig": {
         "version": "0.8.28",
@@ -338,8 +302,8 @@
       ]
     },
     "C:\\Users\\LENOVO\\Desktop\\PADD-R\\contracts\\node_modules\\@openzeppelin\\contracts\\utils\\introspection\\IERC165.sol": {
-      "lastModificationDate": 1749885806996,
-      "contentHash": "de0163561b417b800d01749cbbe2147e",
+      "lastModificationDate": 1750064097665,
+      "contentHash": "bf0119eb2a570f219729ff38b6cd1df8",
       "sourceName": "@openzeppelin/contracts/utils/introspection/IERC165.sol",
       "solcConfig": {
         "version": "0.8.28",
@@ -374,8 +338,8 @@
       ]
     },
     "C:\\Users\\LENOVO\\Desktop\\PADD-R\\contracts\\node_modules\\@openzeppelin\\contracts\\token\\ERC20\\extensions\\IERC20Metadata.sol": {
-      "lastModificationDate": 1749885807005,
-      "contentHash": "4c02fa6f7ae7b6c289cef80424f0c875",
+      "lastModificationDate": 1750064097712,
+      "contentHash": "794db3115001aa372c79326fcfd44b1f",
       "sourceName": "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol",
       "solcConfig": {
         "version": "0.8.28",
@@ -412,8 +376,8 @@
       ]
     },
     "C:\\Users\\LENOVO\\Desktop\\PADD-R\\contracts\\node_modules\\@openzeppelin\\contracts\\token\\ERC20\\ERC20.sol": {
-      "lastModificationDate": 1749885806909,
-      "contentHash": "c6375ef25e84c90b3d15f9ec4eef218f",
+      "lastModificationDate": 1750064096903,
+      "contentHash": "57d79df281f57bbb1b09214c7914f877",
       "sourceName": "@openzeppelin/contracts/token/ERC20/ERC20.sol",
       "solcConfig": {
         "version": "0.8.28",
@@ -453,8 +417,8 @@
       ]
     },
     "C:\\Users\\LENOVO\\Desktop\\PADD-R\\contracts\\node_modules\\@openzeppelin\\contracts\\interfaces\\draft-IERC6093.sol": {
-      "lastModificationDate": 1749885806876,
-      "contentHash": "4aefc698f77ecbace7f401257dfe182d",
+      "lastModificationDate": 1750064096599,
+      "contentHash": "267d92fe4de67b1bdb3302c08f387dbf",
       "sourceName": "@openzeppelin/contracts/interfaces/draft-IERC6093.sol",
       "solcConfig": {
         "version": "0.8.28",
@@ -491,8 +455,8 @@
       ]
     },
     "C:\\Users\\LENOVO\\Desktop\\PADD-R\\contracts\\node_modules\\@openzeppelin\\contracts\\token\\ERC20\\extensions\\ERC20Permit.sol": {
-      "lastModificationDate": 1749885806917,
-      "contentHash": "d3f7511a1805398723f36799db2af4e1",
+      "lastModificationDate": 1750064096940,
+      "contentHash": "b1a8fc63b83ce00408e0c9ed1230b717",
       "sourceName": "@openzeppelin/contracts/token/ERC20/extensions/ERC20Permit.sol",
       "solcConfig": {
         "version": "0.8.28",
@@ -533,7 +497,7 @@
       ]
     },
     "C:\\Users\\LENOVO\\Desktop\\PADD-R\\contracts\\node_modules\\@openzeppelin\\contracts\\utils\\Nonces.sol": {
-      "lastModificationDate": 1749885807055,
+      "lastModificationDate": 1750064098001,
       "contentHash": "c32d108058718efb9061b88e83a83f79",
       "sourceName": "@openzeppelin/contracts/utils/Nonces.sol",
       "solcConfig": {
@@ -569,8 +533,8 @@
       ]
     },
     "C:\\Users\\LENOVO\\Desktop\\PADD-R\\contracts\\node_modules\\@openzeppelin\\contracts\\utils\\cryptography\\EIP712.sol": {
-      "lastModificationDate": 1749885806880,
-      "contentHash": "33f2efa11c674f59f4b8365be7a58da9",
+      "lastModificationDate": 1750064096673,
+      "contentHash": "b21731956bbef780b4cc856e8dda7426",
       "sourceName": "@openzeppelin/contracts/utils/cryptography/EIP712.sol",
       "solcConfig": {
         "version": "0.8.28",
@@ -609,8 +573,8 @@
       ]
     },
     "C:\\Users\\LENOVO\\Desktop\\PADD-R\\contracts\\node_modules\\@openzeppelin\\contracts\\utils\\cryptography\\ECDSA.sol": {
-      "lastModificationDate": 1749885806876,
-      "contentHash": "b96e0d7a3c2b185342c7d083d765b61f",
+      "lastModificationDate": 1750064096645,
+      "contentHash": "81de029d56aa803972be03c5d277cb6c",
       "sourceName": "@openzeppelin/contracts/utils/cryptography/ECDSA.sol",
       "solcConfig": {
         "version": "0.8.28",
@@ -645,8 +609,8 @@
       ]
     },
     "C:\\Users\\LENOVO\\Desktop\\PADD-R\\contracts\\node_modules\\@openzeppelin\\contracts\\token\\ERC20\\extensions\\IERC20Permit.sol": {
-      "lastModificationDate": 1749885807005,
-      "contentHash": "da291753fa4641f2c5837bfc4aa4c01b",
+      "lastModificationDate": 1750064097716,
+      "contentHash": "94ec15baf0d5df863f45b8f351937ec7",
       "sourceName": "@openzeppelin/contracts/token/ERC20/extensions/IERC20Permit.sol",
       "solcConfig": {
         "version": "0.8.28",
@@ -681,7 +645,7 @@
       ]
     },
     "C:\\Users\\LENOVO\\Desktop\\PADD-R\\contracts\\node_modules\\@openzeppelin\\contracts\\interfaces\\IERC5267.sol": {
-      "lastModificationDate": 1749885807018,
+      "lastModificationDate": 1750064097808,
       "contentHash": "94364524cb1a39dcbc3d3afff6d8e53e",
       "sourceName": "@openzeppelin/contracts/interfaces/IERC5267.sol",
       "solcConfig": {
@@ -717,8 +681,8 @@
       ]
     },
     "C:\\Users\\LENOVO\\Desktop\\PADD-R\\contracts\\node_modules\\@openzeppelin\\contracts\\utils\\cryptography\\MessageHashUtils.sol": {
-      "lastModificationDate": 1749885807052,
-      "contentHash": "9e5eec59eaffa554d6cca561dcb914eb",
+      "lastModificationDate": 1750064097985,
+      "contentHash": "260f3968eefa3bbd30520cff5384cd93",
       "sourceName": "@openzeppelin/contracts/utils/cryptography/MessageHashUtils.sol",
       "solcConfig": {
         "version": "0.8.28",
@@ -755,8 +719,8 @@
       ]
     },
     "C:\\Users\\LENOVO\\Desktop\\PADD-R\\contracts\\node_modules\\@openzeppelin\\contracts\\utils\\ShortStrings.sol": {
-      "lastModificationDate": 1749885807075,
-      "contentHash": "1b71929454f558e486d1f4f2471f29d4",
+      "lastModificationDate": 1750064098095,
+      "contentHash": "c1be9487e5a64acf23b5d8028482e748",
       "sourceName": "@openzeppelin/contracts/utils/ShortStrings.sol",
       "solcConfig": {
         "version": "0.8.28",
@@ -793,8 +757,8 @@
       ]
     },
     "C:\\Users\\LENOVO\\Desktop\\PADD-R\\contracts\\node_modules\\@openzeppelin\\contracts\\utils\\Strings.sol": {
-      "lastModificationDate": 1749885807081,
-      "contentHash": "ba57ff4ddf1d9cae9d2009792795b7f6",
+      "lastModificationDate": 1750064098129,
+      "contentHash": "13dbc135f563c72a11b1cf4fbb5fb284",
       "sourceName": "@openzeppelin/contracts/utils/Strings.sol",
       "solcConfig": {
         "version": "0.8.28",
@@ -822,6 +786,7 @@
       },
       "imports": [
         "./math/Math.sol",
+        "./math/SafeCast.sol",
         "./math/SignedMath.sol"
       ],
       "versionPragmas": [
@@ -831,10 +796,10 @@
         "Strings"
       ]
     },
-    "C:\\Users\\LENOVO\\Desktop\\PADD-R\\contracts\\node_modules\\@openzeppelin\\contracts\\utils\\math\\Math.sol": {
-      "lastModificationDate": 1749885807044,
-      "contentHash": "718fa8ba0ff269c92e364c1429d9de57",
-      "sourceName": "@openzeppelin/contracts/utils/math/Math.sol",
+    "C:\\Users\\LENOVO\\Desktop\\PADD-R\\contracts\\node_modules\\@openzeppelin\\contracts\\utils\\math\\SafeCast.sol": {
+      "lastModificationDate": 1750064098085,
+      "contentHash": "2adca1150f58fc6f3d1f0a0f22ee7cca",
+      "sourceName": "@openzeppelin/contracts/utils/math/SafeCast.sol",
       "solcConfig": {
         "version": "0.8.28",
         "settings": {
@@ -864,12 +829,12 @@
         "^0.8.20"
       ],
       "artifacts": [
-        "Math"
+        "SafeCast"
       ]
     },
     "C:\\Users\\LENOVO\\Desktop\\PADD-R\\contracts\\node_modules\\@openzeppelin\\contracts\\utils\\math\\SignedMath.sol": {
-      "lastModificationDate": 1749885807077,
-      "contentHash": "b6c6bdc7aaca4fe5b680760a72e09d3e",
+      "lastModificationDate": 1750064098103,
+      "contentHash": "ae3528afb8bdb0a7dcfba5b115ee8074",
       "sourceName": "@openzeppelin/contracts/utils/math/SignedMath.sol",
       "solcConfig": {
         "version": "0.8.28",
@@ -895,7 +860,9 @@
           }
         }
       },
-      "imports": [],
+      "imports": [
+        "./SafeCast.sol"
+      ],
       "versionPragmas": [
         "^0.8.20"
       ],
@@ -903,9 +870,84 @@
         "SignedMath"
       ]
     },
+    "C:\\Users\\LENOVO\\Desktop\\PADD-R\\contracts\\node_modules\\@openzeppelin\\contracts\\utils\\math\\Math.sol": {
+      "lastModificationDate": 1750064097958,
+      "contentHash": "5ec781e33d3a9ac91ffdc83d94420412",
+      "sourceName": "@openzeppelin/contracts/utils/math/Math.sol",
+      "solcConfig": {
+        "version": "0.8.28",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "../Panic.sol",
+        "./SafeCast.sol"
+      ],
+      "versionPragmas": [
+        "^0.8.20"
+      ],
+      "artifacts": [
+        "Math"
+      ]
+    },
+    "C:\\Users\\LENOVO\\Desktop\\PADD-R\\contracts\\node_modules\\@openzeppelin\\contracts\\utils\\Panic.sol": {
+      "lastModificationDate": 1750064098044,
+      "contentHash": "2133dc13536b4a6a98131e431fac59e1",
+      "sourceName": "@openzeppelin/contracts/utils/Panic.sol",
+      "solcConfig": {
+        "version": "0.8.28",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.8.20"
+      ],
+      "artifacts": [
+        "Panic"
+      ]
+    },
     "C:\\Users\\LENOVO\\Desktop\\PADD-R\\contracts\\node_modules\\@openzeppelin\\contracts\\utils\\StorageSlot.sol": {
-      "lastModificationDate": 1749885807077,
-      "contentHash": "08cbccfefa284405c12b4bfa8c8c9c2b",
+      "lastModificationDate": 1750064098118,
+      "contentHash": "e656d64c4ce918f3d13030b91c935134",
       "sourceName": "@openzeppelin/contracts/utils/StorageSlot.sol",
       "solcConfig": {
         "version": "0.8.28",
@@ -939,8 +981,162 @@
         "StorageSlot"
       ]
     },
+    "C:\\Users\\LENOVO\\Desktop\\PADD-R\\contracts\\contracts\\PADNFTFactory.sol": {
+      "lastModificationDate": 1749904458575,
+      "contentHash": "6211ca6fb76532ded713e842b7f9418d",
+      "sourceName": "contracts/PADNFTFactory.sol",
+      "solcConfig": {
+        "version": "0.8.28",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "erc721a/contracts/ERC721A.sol",
+        "@openzeppelin/contracts/access/AccessControl.sol",
+        "@openzeppelin/contracts/utils/Strings.sol"
+      ],
+      "versionPragmas": [
+        "^0.8.20"
+      ],
+      "artifacts": [
+        "ITierCalculator",
+        "PADNFTFactory"
+      ]
+    },
+    "C:\\Users\\LENOVO\\Desktop\\PADD-R\\contracts\\node_modules\\erc721a\\contracts\\ERC721A.sol": {
+      "lastModificationDate": 1750064083083,
+      "contentHash": "f00e8b038a7d958f397c9fb8d107ec1c",
+      "sourceName": "erc721a/contracts/ERC721A.sol",
+      "solcConfig": {
+        "version": "0.8.28",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "./IERC721A.sol"
+      ],
+      "versionPragmas": [
+        "^0.8.4"
+      ],
+      "artifacts": [
+        "ERC721A",
+        "ERC721A__IERC721Receiver"
+      ]
+    },
+    "C:\\Users\\LENOVO\\Desktop\\PADD-R\\contracts\\node_modules\\erc721a\\contracts\\IERC721A.sol": {
+      "lastModificationDate": 1750064084664,
+      "contentHash": "f6791e37b41ad9fa583adb9845c17d51",
+      "sourceName": "erc721a/contracts/IERC721A.sol",
+      "solcConfig": {
+        "version": "0.8.28",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.8.4"
+      ],
+      "artifacts": [
+        "IERC721A"
+      ]
+    },
+    "C:\\Users\\LENOVO\\Desktop\\PADD-R\\contracts\\node_modules\\@openzeppelin\\contracts\\utils\\Pausable.sol": {
+      "lastModificationDate": 1750064098049,
+      "contentHash": "0d47b53e10b1985efbb396f937626279",
+      "sourceName": "@openzeppelin/contracts/utils/Pausable.sol",
+      "solcConfig": {
+        "version": "0.8.28",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "../utils/Context.sol"
+      ],
+      "versionPragmas": [
+        "^0.8.20"
+      ],
+      "artifacts": [
+        "Pausable"
+      ]
+    },
     "C:\\Users\\LENOVO\\Desktop\\PADD-R\\contracts\\contracts\\PADToken.sol": {
-      "lastModificationDate": 1749888584636,
+      "lastModificationDate": 1749902336831,
       "contentHash": "5a4206941ab2eb281d3318a1cdca3c46",
       "sourceName": "contracts/PADToken.sol",
       "solcConfig": {
@@ -978,44 +1174,6 @@
       ],
       "artifacts": [
         "PADToken"
-      ]
-    },
-    "C:\\Users\\LENOVO\\Desktop\\PADD-R\\contracts\\node_modules\\@openzeppelin\\contracts\\utils\\Pausable.sol": {
-      "lastModificationDate": 1749885807060,
-      "contentHash": "24e52f6ef3868e6fca664a423140bee9",
-      "sourceName": "@openzeppelin/contracts/utils/Pausable.sol",
-      "solcConfig": {
-        "version": "0.8.28",
-        "settings": {
-          "optimizer": {
-            "enabled": true,
-            "runs": 200
-          },
-          "evmVersion": "paris",
-          "outputSelection": {
-            "*": {
-              "*": [
-                "abi",
-                "evm.bytecode",
-                "evm.deployedBytecode",
-                "evm.methodIdentifiers",
-                "metadata"
-              ],
-              "": [
-                "ast"
-              ]
-            }
-          }
-        }
-      },
-      "imports": [
-        "../utils/Context.sol"
-      ],
-      "versionPragmas": [
-        "^0.8.20"
-      ],
-      "artifacts": [
-        "Pausable"
       ]
     },
     "C:\\Users\\LENOVO\\Desktop\\PADD-R\\contracts\\contracts\\MaliciousContract.sol": {
@@ -1092,10 +1250,10 @@
         "ITierCalculator"
       ]
     },
-    "C:\\Users\\LENOVO\\Desktop\\PADD-R\\contracts\\contracts\\Lock.sol": {
-      "lastModificationDate": 1749882512437,
-      "contentHash": "7eee587c347fe6b1de50c96688cb9477",
-      "sourceName": "contracts/Lock.sol",
+    "C:\\Users\\LENOVO\\Desktop\\PADD-R\\contracts\\contracts\\TierCalculator.sol": {
+      "lastModificationDate": 1749904625144,
+      "contentHash": "f5531c1e08c5b319dbfe6671b1761f06",
+      "sourceName": "contracts/TierCalculator.sol",
       "solcConfig": {
         "version": "0.8.28",
         "settings": {
@@ -1122,10 +1280,46 @@
       },
       "imports": [],
       "versionPragmas": [
-        "^0.8.28"
+        "^0.8.20"
       ],
       "artifacts": [
-        "Lock"
+        "TierCalculator"
+      ]
+    },
+    "C:\\Users\\LENOVO\\Desktop\\PADD-R\\contracts\\contracts\\TierCalculatorLib.sol": {
+      "lastModificationDate": 1749904599745,
+      "contentHash": "997a5195b2d5c9125ae5a3b6da6bc867",
+      "sourceName": "contracts/TierCalculatorLib.sol",
+      "solcConfig": {
+        "version": "0.8.28",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.8.20"
+      ],
+      "artifacts": [
+        "TierCalculatorLib"
       ]
     }
   }
