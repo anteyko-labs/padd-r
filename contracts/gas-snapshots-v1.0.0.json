@@ -1,0 +1,71 @@
+{
+  "timestamp": "2025-06-17T11:18:12.728Z",
+  "version": "v1.0.0",
+  "contracts": {
+    "PADToken": {
+      "deployment": {
+        "gasUsed": "30000000",
+        "gasPrice": "1107421875",
+        "totalCost": "33222656250000000"
+      },
+      "functions": {
+        "batchTransfer": {
+          "gasUsed": "106309",
+          "gasPrice": "985465537",
+          "totalCost": "104763855772933"
+        },
+        "transfer": {
+          "gasUsed": "38964",
+          "gasPrice": "863155377",
+          "totalCost": "33631986109428"
+        },
+        "pause": {
+          "gasUsed": "47073",
+          "gasPrice": "755541223",
+          "totalCost": "35565591990279"
+        },
+        "unpause": {
+          "gasUsed": "25105",
+          "gasPrice": "661394951",
+          "totalCost": "16604320244855"
+        }
+      }
+    },
+    "MultiStakeManager": {
+      "deployment": {
+        "gasUsed": "30000000",
+        "gasPrice": "578858951",
+        "totalCost": "17365768530000000"
+      },
+      "functions": {
+        "createPosition": {
+          "gasUsed": "169099",
+          "gasPrice": "450057605",
+          "totalCost": "76104290947895"
+        }
+      }
+    },
+    "TierCalculator": {
+      "deployment": {
+        "gasUsed": "30000000",
+        "gasPrice": "394434608",
+        "totalCost": "11833038240000000"
+      },
+      "functions": {}
+    },
+    "PADNFTFactory": {
+      "deployment": {
+        "gasUsed": "30000000",
+        "gasPrice": "345513992",
+        "totalCost": "10365419760000000"
+      },
+      "functions": {
+        "mintNFT": {
+          "gasUsed": "239374",
+          "gasPrice": "268901923",
+          "totalCost": "64368128916202"
+        }
+      }
+    }
+  }
+}

@@ -179,5 +179,63 @@ describe("PADToken", function () {
       await padToken.connect(user1).batchTransfer(recipients, amounts);
       expect(await padToken.balanceOf(user2.address)).to.equal(amounts[0]);
     });
+
+    // Дополнительные тесты для покрытия веток
+    it("Should handle zero cooldown period", async function () {
+      await expect(
+        padToken.setCooldownPeriod(0)
+      ).to.be.revertedWith("Invalid cooldown period");
+    });
+
+    it("Should handle zero address for Gnosis Safe", async function () {
+      await expect(
+        padToken.setGnosisSafe(ethers.ZeroAddress)
+      ).to.be.revertedWith("Invalid address");
+    });
+
+    it("Should allow non-cooldown accounts to transfer multiple times", async function () {
+      // user2 doesn't have cooldown
+      await padToken.transfer(user2.address, ethers.parseEther("1000"));
+      
+      // user2 should be able to transfer multiple times
+      await padToken.connect(user2).transfer(user1.address, ethers.parseEther("500"));
+      await padToken.connect(user2).transfer(user1.address, ethers.parseEther("500"));
+    });
+
+    it("Should not enforce cooldown for accounts without cooldown", async function () {
+      // Remove cooldown from user1
+      await padToken.setCooldown(user1.address, false);
+      
+      // Multiple transfers should work
+      await padToken.transfer(user1.address, ethers.parseEther("1000"));
+      await padToken.connect(user1).transfer(user2.address, ethers.parseEther("100"));
+      await padToken.connect(user1).transfer(user2.address, ethers.parseEther("100"));
+    });
+
+    it("Should not enforce cooldown for batch transfer without cooldown", async function () {
+      // Remove cooldown from user1
+      await padToken.setCooldown(user1.address, false);
+      
+      // Multiple batch transfers should work
+      await padToken.transfer(user1.address, ethers.parseEther("1000"));
+      await padToken.connect(user1).batchTransfer([user2.address], [ethers.parseEther("100")]);
+      await padToken.connect(user1).batchTransfer([user2.address], [ethers.parseEther("100")]);
+    });
+
+    it("Should handle insufficient balance in batch transfer", async function () {
+      await expect(
+        padToken.batchTransfer([user1.address], [ethers.parseEther("200000000")]) // More than total supply
+      ).to.be.revertedWith("Insufficient balance");
+    });
+
+    it("Should handle empty arrays in batch transfer", async function () {
+      await padToken.batchTransfer([], []);
+      // Should not revert
+    });
+
+    it("Should handle single recipient in batch transfer", async function () {
+      await padToken.batchTransfer([user1.address], [ethers.parseEther("1000")]);
+      expect(await padToken.balanceOf(user1.address)).to.equal(ethers.parseEther("1000"));
+    });
   });
 }); 

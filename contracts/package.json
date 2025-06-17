@@ -12,7 +12,11 @@
     "deploy:all": "hardhat run scripts/deploy.js --network",
     "verify:token": "hardhat verify --network",
     "verify:tier": "hardhat verify --network",
-    "verify:stake": "hardhat verify --network"
+    "verify:stake": "hardhat verify --network",
+    "gas:snapshot": "hardhat run scripts/gas-snapshot.js",
+    "gas:compare": "node scripts/compare-gas-snapshots.js",
+    "gas:report": "set REPORT_GAS=true && hardhat test",
+    "gas:version": "node scripts/create-version-snapshot.js"
   },
   "keywords": [],
   "author": "",
@@ -21,7 +25,9 @@
     "@chainlink/contracts": "^0.8.0",
     "@nomicfoundation/hardhat-toolbox": "^4.0.0",
     "dotenv": "^16.0.3",
-    "hardhat": "^2.19.4"
+    "hardhat": "^2.19.4",
+    "hardhat-gas-reporter": "^2.3.0",
+    "solidity-coverage": "^0.8.16"
   },
   "dependencies": {
     "@openzeppelin/contracts": "^5.0.1",

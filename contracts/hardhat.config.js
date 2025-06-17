@@ -1,5 +1,6 @@
 require("@nomicfoundation/hardhat-toolbox");
 require("dotenv").config();
+require("solidity-coverage");
 
 /** @type import('hardhat/config').HardhatUserConfig */
 module.exports = {
@@ -52,5 +53,16 @@ module.exports = {
   gasReporter: {
     enabled: process.env.REPORT_GAS !== undefined,
     currency: "USD"
+  },
+  coverage: {
+    enabled: true,
+    runs: 200,
+    exclude: [
+      "test/",
+      "script/",
+      "node_modules/",
+      "coverage/",
+      "coverage.json"
+    ]
   }
 };

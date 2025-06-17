@@ -1,0 +1,92 @@
+{
+  "timestamp": "2025-06-17T11:14:50.247Z",
+  "baseline": "1.0.0",
+  "current": "1.0.0",
+  "changes": {
+    "PADToken": {
+      "deployment": {
+        "change": "SAME",
+        "oldGas": "30000000",
+        "newGas": "30000000",
+        "difference": "0",
+        "percentage": "0.00%"
+      },
+      "functions": {
+        "batchTransfer": {
+          "change": "SAME",
+          "oldGas": "106309",
+          "newGas": "106309",
+          "difference": "0",
+          "percentage": "0.00%"
+        },
+        "transfer": {
+          "change": "SAME",
+          "oldGas": "38964",
+          "newGas": "38964",
+          "difference": "0",
+          "percentage": "0.00%"
+        },
+        "pause": {
+          "change": "SAME",
+          "oldGas": "47073",
+          "newGas": "47073",
+          "difference": "0",
+          "percentage": "0.00%"
+        },
+        "unpause": {
+          "change": "SAME",
+          "oldGas": "25105",
+          "newGas": "25105",
+          "difference": "0",
+          "percentage": "0.00%"
+        }
+      }
+    },
+    "MultiStakeManager": {
+      "deployment": {
+        "change": "SAME",
+        "oldGas": "30000000",
+        "newGas": "30000000",
+        "difference": "0",
+        "percentage": "0.00%"
+      },
+      "functions": {
+        "createPosition": {
+          "change": "SAME",
+          "oldGas": "169099",
+          "newGas": "169099",
+          "difference": "0",
+          "percentage": "0.00%"
+        }
+      }
+    },
+    "TierCalculator": {
+      "deployment": {
+        "change": "SAME",
+        "oldGas": "30000000",
+        "newGas": "30000000",
+        "difference": "0",
+        "percentage": "0.00%"
+      },
+      "functions": {}
+    },
+    "PADNFTFactory": {
+      "deployment": {
+        "change": "SAME",
+        "oldGas": "30000000",
+        "newGas": "30000000",
+        "difference": "0",
+        "percentage": "0.00%"
+      },
+      "functions": {
+        "mintNFT": {
+          "change": "SAME",
+          "oldGas": "239374",
+          "newGas": "239374",
+          "difference": "0",
+          "percentage": "0.00%"
+        }
+      }
+    }
+  }
+}
