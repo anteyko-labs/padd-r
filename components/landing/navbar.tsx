@@ -5,11 +5,12 @@ import { Button } from '@/components/ui/button';
 import { Logo } from '@/components/ui/logo';
 import { Menu, X, Wallet, User } from 'lucide-react';
 import Link from 'next/link';
-import { useWallet } from '@/components/wallet-provider';
+import { useWallet } from '@/hooks/use-wallet';
+import { ConnectWalletButton } from '@/components/ui/connect-wallet-button';
 
 export function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const { isConnected, address, connect, disconnect } = useWallet();
+  const { isConnected, address, isSepoliaNetwork, switchToSepolia } = useWallet();
 
   const navItems = [
     { href: '#how-it-works', label: 'How It Works' },
@@ -44,19 +45,23 @@ export function Navbar() {
             ))}
             
             {!isConnected ? (
-              <Button 
-                onClick={connect}
-                className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold px-6"
-              >
-                <Wallet className="mr-2" size={16} />
-                Connect Wallet
-              </Button>
+              <ConnectWalletButton className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold px-6" />
             ) : (
               <div className="flex items-center space-x-3">
                 <div className="flex items-center space-x-2 bg-gray-800 rounded-2xl px-4 py-2">
                   <div className="w-2 h-2 bg-emerald-400 rounded-full animate-glow" />
                   <span className="text-sm text-gray-300">{formatAddress(address!)}</span>
                 </div>
+                {!isSepoliaNetwork && (
+                  <Button 
+                    onClick={switchToSepolia}
+                    variant="outline"
+                    size="sm"
+                    className="text-yellow-400 border-yellow-400 hover:bg-yellow-400 hover:text-black"
+                  >
+                    Switch to Sepolia
+                  </Button>
+                )}
                 <Link href="/dashboard">
                   <Button className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold">
                     <User className="mr-2" size={16} />
@@ -92,22 +97,25 @@ export function Navbar() {
             ))}
             
             {!isConnected ? (
-              <Button 
-                onClick={() => {
-                  connect();
-                  setMobileMenuOpen(false);
-                }}
-                className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold"
-              >
-                <Wallet className="mr-2" size={16} />
-                Connect Wallet
-              </Button>
+              <div className="w-full">
+                <ConnectWalletButton className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold" />
+              </div>
             ) : (
               <div className="space-y-3">
                 <div className="flex items-center space-x-2 bg-gray-800 rounded-2xl px-4 py-2">
                   <div className="w-2 h-2 bg-emerald-400 rounded-full animate-glow" />
                   <span className="text-sm text-gray-300">{formatAddress(address!)}</span>
                 </div>
+                {!isSepoliaNetwork && (
+                  <Button 
+                    onClick={switchToSepolia}
+                    variant="outline"
+                    size="sm"
+                    className="w-full text-yellow-400 border-yellow-400 hover:bg-yellow-400 hover:text-black"
+                  >
+                    Switch to Sepolia
+                  </Button>
+                )}
                 <Link href="/dashboard">
                   <Button 
                     className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold"

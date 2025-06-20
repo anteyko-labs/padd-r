@@ -1,0 +1,101 @@
+'use client';
+
+import { useAccount } from 'wagmi';
+import { useReadContract, useReadContracts } from 'wagmi';
+import { NFT_FACTORY_ABI } from '@/lib/contracts/abis';
+import { CONTRACT_ADDRESSES, formatTokenAmount, formatDate, TIER_LEVELS } from '@/lib/contracts/config';
+import { useStakingPositions } from './useStakingPositions';
+
+export function useNFTBalance() {
+  const { address, chainId } = useAccount();
+  const contractAddress = CONTRACT_ADDRESSES[chainId as keyof typeof CONTRACT_ADDRESSES]?.NFT_FACTORY;
+
+  // Получаем баланс NFT
+  const { data: nftBalance, isLoading: isLoadingBalance } = useReadContract({
+    address: contractAddress as `0x${string}`,
+    abi: NFT_FACTORY_ABI,
+    functionName: 'balanceOf',
+    args: [address!],
+    query: { enabled: !!address },
+  });
+
+  // Получаем все tokenIds пользователя
+  const tokenIdList = Array.from({ length: Number(nftBalance || 0) }, (_, i) => BigInt(i));
+  const { data: tokenIdsData, isLoading: isLoadingTokenIds } = useReadContracts({
+    contracts: tokenIdList.map((idx) => ({
+      address: contractAddress as `0x${string}`,
+      abi: NFT_FACTORY_ABI,
+      functionName: 'tokenOfOwnerByIndex',
+      args: [address!, idx],
+    })),
+    query: { enabled: !!address && tokenIdList.length > 0 },
+  });
+  const tokenIds = Array.isArray(tokenIdsData) ? tokenIdsData.map((res) => res.result).filter(Boolean) : [];
+
+  // Получаем метаданные для всех tokenIds
+  const { data: nftsMetaData, isLoading: isLoadingMeta } = useReadContracts({
+    contracts: tokenIds.map((tokenId) => ({
+      address: contractAddress as `0x${string}`,
+      abi: NFT_FACTORY_ABI,
+      functionName: 'nftMetadata',
+      args: [tokenId],
+    })),
+    query: { enabled: tokenIds.length > 0 },
+  });
+
+  // Форматируем и фильтруем только стейкинг-NFT (positionId > 0)
+  const nfts = (Array.isArray(nftsMetaData) ? nftsMetaData.map((res, i) => {
+    const meta = res.result;
+    if (!meta) return null;
+    const [positionId, amountStaked, lockDurationMonths, startTimestamp, tierLevel, monthIndex, nextMintOn] = meta;
+    const tierNumber = Number(tierLevel);
+    const tierInfo = TIER_LEVELS[tierNumber as keyof typeof TIER_LEVELS];
+    const startTimestampNum = Number(startTimestamp);
+    const nextMintOnNum = Number(nextMintOn);
+    return {
+      tokenId: Number(tokenIds[i] || 0),
+      positionId,
+      amountStaked,
+      lockDurationMonths,
+      startTimestamp,
+      tierLevel: tierNumber,
+      monthIndex,
+      nextMintOn,
+      formattedAmountStaked: formatTokenAmount(amountStaked),
+      formattedStartDate: formatDate(startTimestamp),
+      formattedNextMintDate: formatDate(nextMintOn),
+      tierInfo,
+      isTransferable: tierNumber >= 2,
+      daysUntilNextMint: Math.max(0, Math.ceil((nextMintOnNum * 1000 - Date.now()) / (1000 * 60 * 60 * 24))),
+    };
+  }).filter(Boolean) : []) as any[];
+
+  // Логи для диагностики
+  console.log('NFT tokenIds:', tokenIds);
+  console.log('NFT meta:', nftsMetaData);
+
+  const { positions } = useStakingPositions();
+
+  // Вычисляем максимальный tierLevel среди всех стейкинг-NFT
+  const maxTierLevelNFT = nfts.length > 0 ? Math.max(...nfts.map((nft) => nft.tierLevel)) : null;
+
+  // Fallback: если NFT нет, берём максимальный tier среди всех активных позиций
+  let maxTierLevel = maxTierLevelNFT;
+  if (nfts.length === 0 && positions && positions.length > 0) {
+    maxTierLevel = Math.max(...positions.filter(pos => pos.isActive).map(pos => pos.tier ?? 0));
+  }
+  const currentTier = maxTierLevel !== null && maxTierLevel !== undefined ? TIER_LEVELS[maxTierLevel as keyof typeof TIER_LEVELS]?.name : 'None';
+
+  const transferableNFTs = nfts.filter((nft) => nft.isTransferable).length;
+  const totalStakedInNFTs = nfts.reduce((sum, nft) => sum + Number(nft.formattedAmountStaked), 0);
+
+  return {
+    nfts,
+    isLoading: isLoadingBalance || isLoadingTokenIds || isLoadingMeta,
+    totalNFTs: nfts.length,
+    transferableNFTs,
+    totalStakedInNFTs,
+    currentTier,
+    nextMintIn: nfts.length > 0 ? nfts[0].daysUntilNextMint : 0,
+  };
+} 

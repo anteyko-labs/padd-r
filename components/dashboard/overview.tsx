@@ -4,15 +4,46 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Wallet, Shield, Trophy, Clock, TrendingUp, Gift } from 'lucide-react';
+import { usePadBalance } from '@/hooks/usePadBalance';
+import { useStakingPositions } from '@/hooks/useStakingPositions';
+import { useNFTBalance } from '@/hooks/useNFTBalance';
+import { useRouter } from 'next/navigation';
 
 export function Overview() {
+  const { balance, isLoading: isLoadingBalance, error: balanceError } = usePadBalance();
+  const { 
+    positions, 
+    isLoading: isLoadingStaking, 
+    totalStaked, 
+    totalRewards, 
+    activePositions, 
+    currentTier, 
+    nextRewardIn 
+  } = useStakingPositions();
+  const { 
+    totalNFTs, 
+    isLoading: isLoadingNFTs, 
+    totalStakedInNFTs, 
+    currentTier: nftTier 
+  } = useNFTBalance();
+  const router = useRouter();
+
+  // Форматируем баланс
+  const formatBalance = (balance: bigint | undefined) => {
+    if (!balance) return '0';
+    return (Number(balance) / 1e18).toLocaleString();
+  };
+
+  // Получаем лучший тир (из стейкинга или NFT)
+  const bestTier = currentTier !== 'None' ? currentTier : nftTier;
+
   const userStats = {
-    balance: '12,450',
-    stakedAmount: '8,500',
-    currentTier: 'Silver',
-    nextRewardIn: 8,
-    totalRewards: 156,
-    stakingProgress: 60,
+    balance: formatBalance(balance),
+    stakedAmount: totalStaked.toFixed(2),
+    currentTier: bestTier,
+    nextRewardIn,
+    totalRewards: totalRewards.toFixed(2),
+    stakingProgress: positions.length > 0 ? Math.min(100, (activePositions / positions.length) * 100) : 0,
   };
 
   const recentActivity = [
@@ -36,7 +67,13 @@ export function Overview() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-400 mb-1">Token Balance</p>
-                <p className="text-2xl font-bold text-emerald-400">{userStats.balance}</p>
+                {isLoadingBalance ? (
+                  <p className="text-2xl font-bold text-emerald-400">Loading...</p>
+                ) : balanceError ? (
+                  <p className="text-2xl font-bold text-red-400">Error</p>
+                ) : (
+                  <p className="text-2xl font-bold text-emerald-400">{userStats.balance} PAD</p>
+                )}
               </div>
               <div className="w-12 h-12 bg-emerald-600/20 rounded-2xl flex items-center justify-center">
                 <Wallet size={24} className="text-emerald-400" />
@@ -50,7 +87,11 @@ export function Overview() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-400 mb-1">Staked Amount</p>
-                <p className="text-2xl font-bold text-blue-400">{userStats.stakedAmount}</p>
+                {isLoadingStaking ? (
+                  <p className="text-2xl font-bold text-blue-400">Loading...</p>
+                ) : (
+                  <p className="text-2xl font-bold text-blue-400">{userStats.stakedAmount} PAD</p>
+                )}
               </div>
               <div className="w-12 h-12 bg-blue-600/20 rounded-2xl flex items-center justify-center">
                 <Shield size={24} className="text-blue-400" />
@@ -66,7 +107,7 @@ export function Overview() {
                 <p className="text-sm text-gray-400 mb-1">Current Tier</p>
                 <div className="flex items-center space-x-2">
                   <p className="text-2xl font-bold text-gray-300">{userStats.currentTier}</p>
-                  <Badge className="bg-gray-600 text-white">NFT</Badge>
+                  <Badge className="bg-gray-600 text-white">{totalNFTs} NFT</Badge>
                 </div>
               </div>
               <div className="w-12 h-12 bg-purple-600/20 rounded-2xl flex items-center justify-center">
@@ -81,7 +122,11 @@ export function Overview() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-400 mb-1">Next Reward In</p>
-                <p className="text-2xl font-bold text-yellow-400">{userStats.nextRewardIn} days</p>
+                {isLoadingStaking ? (
+                  <p className="text-2xl font-bold text-yellow-400">Loading...</p>
+                ) : (
+                  <p className="text-2xl font-bold text-yellow-400">{userStats.nextRewardIn} days</p>
+                )}
               </div>
               <div className="w-12 h-12 bg-yellow-600/20 rounded-2xl flex items-center justify-center">
                 <Clock size={24} className="text-yellow-400" />
@@ -102,32 +147,47 @@ export function Overview() {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-6">
-            <div className="flex items-center justify-between p-4 rounded-2xl bg-gray-800/50">
-              <div>
-                <p className="font-semibold text-white">8,500 PADD-R</p>
-                <p className="text-sm text-gray-400">Silver Tier • 52 days remaining</p>
+            {isLoadingStaking ? (
+              <div className="text-center py-8">
+                <p className="text-gray-400">Loading staking data...</p>
               </div>
-              <Badge className="bg-emerald-600 text-white">Active</Badge>
-            </div>
-            
-            <div className="space-y-3">
-              <div className="flex justify-between text-sm">
-                <span className="text-gray-400">Progress</span>
-                <span className="text-emerald-400">{userStats.stakingProgress}% complete</span>
+            ) : positions.length > 0 ? (
+              <>
+                <div className="flex items-center justify-between p-4 rounded-2xl bg-gray-800/50">
+                  <div>
+                    <p className="font-semibold text-white">{userStats.stakedAmount} PADD-R</p>
+                    <p className="text-sm text-gray-400">{userStats.currentTier} Tier • {activePositions} active positions</p>
+                  </div>
+                  <Badge className="bg-emerald-600 text-white">Active</Badge>
+                </div>
+                
+                <div className="space-y-3">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-400">Progress</span>
+                    <span className="text-emerald-400">{userStats.stakingProgress}% complete</span>
+                  </div>
+                  <Progress value={userStats.stakingProgress} className="h-3" />
+                </div>
+                
+                <div className="grid grid-cols-2 gap-4 text-center">
+                  <div className="p-3 bg-gray-800/30 rounded-xl">
+                    <p className="text-sm text-gray-400">Total Rewards</p>
+                    <p className="text-lg font-bold text-emerald-400">{userStats.totalRewards} PAD</p>
+                  </div>
+                  <div className="p-3 bg-gray-800/30 rounded-xl">
+                    <p className="text-sm text-gray-400">NFTs Owned</p>
+                    <p className="text-lg font-bold text-purple-400">{totalNFTs}</p>
+                  </div>
+                </div>
+              </>
+            ) : (
+              <div className="text-center py-8">
+                <p className="text-gray-400 mb-4">No staking positions yet</p>
+                <button className="px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl font-semibold transition-colors">
+                  Start Staking
+                </button>
               </div>
-              <Progress value={userStats.stakingProgress} className="h-3" />
-            </div>
-            
-            <div className="grid grid-cols-2 gap-4 text-center">
-              <div className="p-3 bg-gray-800/30 rounded-xl">
-                <p className="text-sm text-gray-400">Days Staked</p>
-                <p className="text-lg font-bold text-white">38</p>
-              </div>
-              <div className="p-3 bg-gray-800/30 rounded-xl">
-                <p className="text-sm text-gray-400">Rewards Earned</p>
-                <p className="text-lg font-bold text-emerald-400">3</p>
-              </div>
-            </div>
+            )}
           </CardContent>
         </Card>
 
@@ -174,10 +234,16 @@ export function Overview() {
               <p className="text-gray-300">Increase your tier and unlock better rewards</p>
             </div>
             <div className="flex space-x-4 mt-4 md:mt-0">
-              <button className="px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl font-semibold transition-colors">
+              <button
+                className="px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl font-semibold transition-colors"
+                onClick={() => router.push('/dashboard/stake')}
+              >
                 Stake More
               </button>
-              <button className="px-6 py-3 border border-emerald-600 text-emerald-400 hover:bg-emerald-600/10 rounded-2xl font-semibold transition-colors">
+              <button
+                className="px-6 py-3 border border-emerald-600 text-emerald-400 hover:bg-emerald-600/10 rounded-2xl font-semibold transition-colors"
+                onClick={() => router.push('/dashboard/rewards')}
+              >
                 View Rewards
               </button>
             </div>

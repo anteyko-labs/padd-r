@@ -38,8 +38,8 @@
       ]
     },
     "C:\\Users\\LENOVO\\Desktop\\PADD-R\\contracts\\contracts\\MultiStakeManager.sol": {
-      "lastModificationDate": 1750075797616,
-      "contentHash": "a64ac4e355db68f55f598c07bb464898",
+      "lastModificationDate": 1750327685622,
+      "contentHash": "67ad36807914aac4b9c6777c84586bfd",
       "sourceName": "contracts/MultiStakeManager.sol",
       "solcConfig": {
         "version": "0.8.28",

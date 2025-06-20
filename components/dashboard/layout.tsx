@@ -7,7 +7,8 @@ import { Logo } from '@/components/ui/logo';
 import { Wallet, LogOut, Menu, X, Home, TrendingUp, Gift, History, User } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useWallet } from '@/components/wallet-provider';
+import { useWallet } from '@/hooks/use-wallet';
+import { ConnectWalletButton } from '@/components/ui/connect-wallet-button';
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -15,8 +16,14 @@ interface DashboardLayoutProps {
 
 export function DashboardLayout({ children }: DashboardLayoutProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const { isConnected, address, connect, disconnect } = useWallet();
+  const [isClient, setIsClient] = useState(false);
+  const { isConnected, address, disconnectWallet, isSepoliaNetwork, switchToSepolia } = useWallet();
   const router = useRouter();
+
+  // Проверяем, что мы на клиенте
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
 
   const navigationItems = [
     { href: '/dashboard', label: 'Overview', icon: Home },
@@ -27,7 +34,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   ];
 
   const handleDisconnect = () => {
-    disconnect();
+    disconnectWallet();
     router.push('/');
   };
 
@@ -37,10 +44,19 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
 
   useEffect(() => {
     // If wallet is not connected, redirect to home
-    if (!isConnected) {
+    if (isClient && !isConnected) {
       router.push('/');
     }
-  }, [isConnected, router]);
+  }, [isConnected, router, isClient]);
+
+  // Показываем загрузку до инициализации клиента
+  if (!isClient) {
+    return (
+      <div className="min-h-screen bg-black flex items-center justify-center">
+        <div className="text-white">Loading...</div>
+      </div>
+    );
+  }
 
   if (!isConnected) {
     return (
@@ -54,14 +70,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
             <p className="text-gray-400 mb-6">
               Connect your wallet to access the PADD-R dashboard and manage your tokens
             </p>
-            <Button 
-              onClick={connect}
-              className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-3"
-              size="lg"
-            >
-              <Wallet className="mr-2" size={20} />
-              Connect MetaMask
-            </Button>
+            <ConnectWalletButton className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-3" />
           </CardContent>
         </Card>
       </div>
@@ -87,8 +96,19 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
             <div className="flex items-center space-x-4">
               <div className="hidden md:flex items-center space-x-2 bg-gray-800 rounded-2xl px-4 py-2">
                 <div className="w-2 h-2 bg-emerald-400 rounded-full animate-glow" />
-                <span className="text-sm text-gray-300">{formatAddress(address!)}</span>
+                <span className="text-sm text-gray-300">{address ? formatAddress(address) : 'Loading...'}</span>
               </div>
+              
+              {!isSepoliaNetwork && (
+                <Button 
+                  onClick={switchToSepolia}
+                  variant="outline"
+                  size="sm"
+                  className="hidden md:flex text-yellow-400 border-yellow-400 hover:bg-yellow-400 hover:text-black"
+                >
+                  Switch to Sepolia
+                </Button>
+              )}
               
               <Button 
                 variant="outline" 
@@ -124,6 +144,16 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                   <span>{item.label}</span>
                 </Link>
               ))}
+              {!isSepoliaNetwork && (
+                <Button 
+                  onClick={switchToSepolia}
+                  variant="outline"
+                  size="sm"
+                  className="w-full text-yellow-400 border-yellow-400 hover:bg-yellow-400 hover:text-black"
+                >
+                  Switch to Sepolia
+                </Button>
+              )}
               <Button 
                 variant="outline" 
                 onClick={handleDisconnect}

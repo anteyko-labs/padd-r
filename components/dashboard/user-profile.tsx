@@ -1,33 +1,112 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { User, ExternalLink, Shield, Mail, Phone, MapPin, Settings } from 'lucide-react';
+import { User, ExternalLink, Shield, Mail, Phone, MapPin, Settings, Trophy, Clock } from 'lucide-react';
+import { useAccount } from 'wagmi';
+import { usePadBalance } from '@/hooks/usePadBalance';
+import { useStakingPositions } from '@/hooks/useStakingPositions';
+import { useNFTBalance } from '@/hooks/useNFTBalance';
+import { TIER_LEVELS } from '@/lib/contracts/config';
 
 export function UserProfile() {
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [notifications, setNotifications] = useState(true);
+  const [isEditing, setIsEditing] = useState(false);
+  const [loading, setLoading] = useState(false);
 
-  const userInfo = {
-    walletAddress: '0x742d35Cc6Bf8fE5a02B5c4B4c8b4cB2',
-    joinDate: 'October 2024',
-    totalStaked: '13,500 PADD-R',
-    currentTier: 'Silver',
-    kycStatus: 'Pending',
-    rewardsEarned: 8,
+  const { address, chainId } = useAccount();
+  const { balance, isLoading: isLoadingBalance } = usePadBalance();
+  const { positions, isLoading: isLoadingPositions, totalStaked, totalRewards, currentTier } = useStakingPositions();
+  const { totalNFTs, isLoading: isLoadingNFTs, currentTier: nftTier } = useNFTBalance();
+
+  useEffect(() => {
+    if (!address) return;
+    setLoading(true);
+    fetch(`/api/profile?address=${address}`)
+      .then(async res => {
+        if (!res.ok) throw new Error('Network response was not ok');
+        const text = await res.text();
+        return text ? JSON.parse(text) : {};
+      })
+      .then(data => {
+        setEmail(data.email || '');
+        setPhone(data.phone || '');
+        setNotifications(data.notifications !== undefined ? data.notifications : true);
+        setLoading(false);
+      })
+      .catch(err => {
+        setLoading(false);
+        console.error('Profile fetch error:', err);
+      });
+  }, [address]);
+
+  const handleSave = async () => {
+    console.log('Save button clicked!');
+    if (!address) return;
+    setLoading(true);
+    try {
+      const res = await fetch('/api/profile', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ address, email, phone, notifications }),
+      });
+      if (res.ok) {
+        setIsEditing(false);
+        // Можно добавить toast об успехе
+      } else {
+        // Можно добавить toast об ошибке
+      }
+    } finally {
+      setLoading(false);
+    }
   };
 
+  // Форматируем адрес кошелька
+  const formatAddress = (address: string | undefined) => {
+    if (!address) return 'Not connected';
+    return `${address.slice(0, 6)}...${address.slice(-4)}`;
+  };
+
+  // Получаем лучший тир
+  const bestTier: string = String(currentTier) !== 'None' ? String(currentTier) : String(nftTier);
+
+  // Форматируем баланс
+  const formatBalance = (balance: bigint | undefined) => {
+    if (!balance) return '0';
+    return (Number(balance) / 1e18).toLocaleString();
+  };
+
+  const userInfo = {
+    walletAddress: formatAddress(address),
+    joinDate: 'October 2024',
+    totalStaked: `${totalStaked.toFixed(2)} PADD-R`,
+    currentTier: bestTier,
+    kycStatus: 'Pending',
+    rewardsEarned: totalRewards.toFixed(2),
+    tokenBalance: formatBalance(balance),
+    nftCount: totalNFTs,
+  };
+
+  // Определяем достигнутые тиры на основе позиций
+  const achievedTiers = new Set<string>();
+  positions.forEach(position => {
+    if (position.tierInfo?.name) {
+      achievedTiers.add(position.tierInfo.name);
+    }
+  });
+
   const tierProgress = [
-    { tier: 'Bronze', required: '6 months - 1 year', achieved: true },
-    { tier: 'Silver', required: '1 - 1.5 years', achieved: true },
-    { tier: 'Gold', required: '1.5 - 2.5 years', achieved: false },
-    { tier: 'Platinum', required: '2.5+ years', achieved: false },
+    { tier: 'Bronze', required: '6 months - 1 year', achieved: achievedTiers.has('Bronze') },
+    { tier: 'Silver', required: '1 - 1.5 years', achieved: achievedTiers.has('Silver') },
+    { tier: 'Gold', required: '1.5 - 2.5 years', achieved: achievedTiers.has('Gold') },
+    { tier: 'Platinum', required: '2.5+ years', achieved: achievedTiers.has('Platinum') },
   ];
 
   return (
@@ -50,16 +129,28 @@ export function UserProfile() {
             <h4 className="font-semibold text-white mb-4">Account Stats</h4>
             <div className="space-y-3">
               <div className="flex justify-between">
+                <span className="text-gray-400">Token Balance</span>
+                <span className="text-emerald-400 font-semibold">
+                  {isLoadingBalance ? 'Loading...' : `${userInfo.tokenBalance} PAD`}
+                </span>
+              </div>
+              <div className="flex justify-between">
                 <span className="text-gray-400">Total Staked</span>
-                <span className="text-emerald-400 font-semibold">{userInfo.totalStaked}</span>
+                <span className="text-blue-400 font-semibold">
+                  {isLoadingPositions ? 'Loading...' : userInfo.totalStaked}
+                </span>
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-400">Rewards Earned</span>
-                <span className="text-white font-semibold">{userInfo.rewardsEarned}</span>
+                <span className="text-white font-semibold">
+                  {isLoadingPositions ? 'Loading...' : `${userInfo.rewardsEarned} PAD`}
+                </span>
               </div>
               <div className="flex justify-between">
-                <span className="text-gray-400">Current Tier</span>
-                <span className="text-white font-semibold">{userInfo.currentTier}</span>
+                <span className="text-gray-400">NFTs Owned</span>
+                <span className="text-purple-400 font-semibold">
+                  {isLoadingNFTs ? 'Loading...' : userInfo.nftCount}
+                </span>
               </div>
             </div>
           </CardContent>
@@ -87,7 +178,10 @@ export function UserProfile() {
       {/* Tier Progress */}
       <Card className="bg-gray-900/50 border-gray-800">
         <CardHeader>
-          <CardTitle>Tier Progress</CardTitle>
+          <CardTitle className="flex items-center space-x-2">
+            <Trophy size={20} className="text-yellow-400" />
+            <span>Tier Progress</span>
+          </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -134,6 +228,7 @@ export function UserProfile() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="bg-gray-800 border-gray-700 text-white mt-2"
+                disabled={!isEditing}
               />
             </div>
 
@@ -149,6 +244,7 @@ export function UserProfile() {
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
                 className="bg-gray-800 border-gray-700 text-white mt-2"
+                disabled={!isEditing}
               />
             </div>
 
@@ -160,16 +256,23 @@ export function UserProfile() {
               <Button
                 variant={notifications ? "default" : "outline"}
                 size="sm"
-                onClick={() => setNotifications(!notifications)}
+                onClick={() => isEditing && setNotifications(!notifications)}
                 className={notifications ? "bg-emerald-600 hover:bg-emerald-700" : "border-gray-600 text-gray-300"}
+                disabled={!isEditing}
               >
                 {notifications ? 'On' : 'Off'}
               </Button>
             </div>
 
-            <Button className="w-full bg-emerald-600 hover:bg-emerald-700">
-              Save Settings
-            </Button>
+            {isEditing ? (
+              <Button className="w-full bg-emerald-600 hover:bg-emerald-700" onClick={handleSave}>
+                Save Settings
+              </Button>
+            ) : (
+              <Button className="w-full bg-emerald-600 hover:bg-emerald-700" onClick={() => setIsEditing(true)}>
+                Edit
+              </Button>
+            )}
           </CardContent>
         </Card>
 
@@ -182,7 +285,7 @@ export function UserProfile() {
               <Label className="text-gray-400">Connected Wallet</Label>
               <div className="flex items-center justify-between mt-2 p-3 bg-gray-800/50 rounded-xl">
                 <div>
-                  <p className="font-medium text-white">MetaMask</p>
+                  <p className="font-medium text-white">Web3 Wallet</p>
                   <p className="text-sm text-gray-400 font-mono">{userInfo.walletAddress}</p>
                 </div>
                 <Button variant="outline" size="sm" className="border-gray-600 text-gray-300">
@@ -198,22 +301,31 @@ export function UserProfile() {
               <Label className="text-gray-400">Network</Label>
               <div className="flex items-center space-x-2 mt-2">
                 <div className="w-3 h-3 bg-yellow-400 rounded-full" />
-                <span className="text-white">Binance Smart Chain</span>
+                <span className="text-white">
+                  {chainId === 11155111 ? 'Sepolia Testnet' : chainId === 1 ? 'Ethereum Mainnet' : `Chain ID: ${chainId}`}
+                </span>
               </div>
             </div>
+
+            <Separator className="bg-gray-800" />
 
             <div>
-              <Label className="text-gray-400">Preferred Location</Label>
-              <div className="flex items-center space-x-2 mt-2">
-                <MapPin size={16} className="text-gray-400" />
-                <span className="text-white">Dubai, UAE</span>
+              <Label className="text-gray-400">Account Summary</Label>
+              <div className="mt-2 space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-400">Active Positions</span>
+                  <span className="text-white">{positions.length}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-400">Total NFTs</span>
+                  <span className="text-purple-400">{totalNFTs}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-400">Current Tier</span>
+                  <span className="font-semibold text-emerald-400">{bestTier}</span>
+                </div>
               </div>
             </div>
-
-            <Button variant="outline" className="w-full border-gray-600 text-gray-300 hover:bg-gray-800">
-              <ExternalLink size={16} className="mr-2" />
-              View on BscScan
-            </Button>
           </CardContent>
         </Card>
       </div>

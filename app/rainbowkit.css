@@ -1,0 +1,21 @@
+/* RainbowKit styles with isolation */
+@import '@rainbow-me/rainbowkit/styles.css';
+
+/* Override RainbowKit styles to match our design */
+[data-rk] {
+  font-family: 'Urbanist', system-ui, sans-serif !important;
+}
+
+[data-rk] * {
+  font-family: 'Urbanist', system-ui, sans-serif !important;
+}
+
+/* Ensure modal doesn't affect our main styles */
+[data-rk] .rainbow-kit-connect-modal {
+  z-index: 9999;
+}
+
+/* Override button styles in modal */
+[data-rk] button {
+  font-family: 'Urbanist', system-ui, sans-serif !important;
+} 

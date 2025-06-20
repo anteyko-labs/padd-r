@@ -89,11 +89,13 @@ contract MultiStakeManager is AccessControl, ReentrancyGuard {
             tier = 0; // Bronze
         }
 
+        uint256 numMints = getNumMints(duration);
+        uint256 interval = getMintInterval(duration);
         positions[positionId] = Position({
             amount: uint128(amount),
             startTime: uint64(startTime),
             duration: uint32(duration),
-            nextMintAt: uint32(startTime.addMonths(1)),
+            nextMintAt: uint32(startTime + interval),
             tier: uint8(tier),
             monthIndex: 0,
             isActive: true,
@@ -113,10 +115,10 @@ contract MultiStakeManager is AccessControl, ReentrancyGuard {
                 msg.sender,
                 positionId,
                 amount,
-                duration / 30 days,
+                numMints,
                 startTime,
                 0,
-                startTime + 30 days
+                startTime + interval
             );
         }
     }
@@ -198,26 +200,32 @@ contract MultiStakeManager is AccessControl, ReentrancyGuard {
         require(position.isActive, "Position not active");
         require(block.timestamp >= position.nextMintAt, "Too early");
         require(msg.sender == nftFactory || msg.sender == address(this), "Not authorized");
-
-        // Calculate next mint time
-        uint256 nextMintAt = position.startTime.addMonths(position.monthIndex + 1);
+        uint256 numMints = getNumMints(position.duration);
+        uint256 interval = getMintInterval(position.duration);
+        uint256 nextMintAt = position.startTime + interval * (position.monthIndex + 1);
         require(nextMintAt <= position.startTime + position.duration, "Position expired");
-
-        // Update position
         position.monthIndex++;
-        position.nextMintAt = uint32(nextMintAt);
-
-        // Mint NFT if factory is set
+        position.nextMintAt = uint32(position.startTime + interval * (position.monthIndex + 1));
         if (nftFactory != address(0)) {
             IPADNFTFactory(nftFactory).mintNFT(
                 position.owner,
                 positionId,
                 position.amount,
-                position.duration / 30 days,
+                numMints,
                 position.startTime,
                 position.monthIndex,
-                nextMintAt
+                position.nextMintAt
             );
         }
+    }
+
+    // Новый: вычисление количества минтов и интервала
+    function getNumMints(uint256 duration) public pure returns (uint256) {
+        return (duration * 12) / 365 days;
+    }
+    function getMintInterval(uint256 duration) public pure returns (uint256) {
+        uint256 numMints = getNumMints(duration);
+        require(numMints > 0, "Duration too short");
+        return duration / numMints;
     }
 } 

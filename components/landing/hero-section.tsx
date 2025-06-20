@@ -3,10 +3,11 @@
 import { Button } from '@/components/ui/button';
 import { ArrowRight, Play, User, Wallet, ExternalLink } from 'lucide-react';
 import Link from 'next/link';
-import { useWallet } from '@/components/wallet-provider';
+import { useWallet } from '@/hooks/use-wallet';
+import { ConnectWalletButton } from '@/components/ui/connect-wallet-button';
 
 export function HeroSection() {
-  const { isConnected, connect } = useWallet();
+  const { isConnected } = useWallet();
 
   return (
     <section className="relative min-h-screen flex items-center justify-center px-4 sm:px-6 lg:px-8 overflow-hidden">
@@ -47,15 +48,7 @@ export function HeroSection() {
             
             {/* Conditional buttons based on wallet connection */}
             {!isConnected ? (
-              <Button 
-                onClick={connect}
-                variant="outline"
-                size="lg" 
-                className="border-emerald-600 text-emerald-400 hover:bg-emerald-600/10 text-lg px-8 py-4 rounded-2xl font-semibold"
-              >
-                <Wallet className="mr-2" size={20} />
-                Connect Wallet
-              </Button>
+              <ConnectWalletButton className="border-emerald-600 text-emerald-400 hover:bg-emerald-600/10 text-lg px-8 py-4 rounded-2xl font-semibold" />
             ) : (
               <Link href="/dashboard">
                 <Button 

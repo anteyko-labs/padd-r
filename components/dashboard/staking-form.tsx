@@ -7,11 +7,41 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { TrendingUp, Shield, Info, Calculator } from 'lucide-react';
+import { TrendingUp, Shield, Info, Calculator, Clock, Trophy } from 'lucide-react';
+import { usePadBalance } from '@/hooks/usePadBalance';
+import { useStakingPositions } from '@/hooks/useStakingPositions';
+import { TIER_LEVELS } from '@/lib/contracts/config';
+import { useAccount, useReadContract, useWriteContract } from 'wagmi';
+import { PAD_TOKEN_ABI, STAKE_MANAGER_ABI } from '@/lib/contracts/abis';
+import { CONTRACT_ADDRESSES } from '@/lib/contracts/config';
+import { useToast } from '@/hooks/use-toast';
+import { useNFTBalance } from '@/hooks/useNFTBalance';
 
 export function StakingForm() {
   const [stakeAmount, setStakeAmount] = useState('');
   const [stakeDuration, setStakeDuration] = useState('365');
+  const [isApproving, setIsApproving] = useState(false);
+  const [isStaking, setIsStaking] = useState(false);
+
+  const { toast } = useToast();
+  const { address, chainId } = useAccount();
+  const { balance, isLoading: isLoadingBalance } = usePadBalance();
+  const { positions, isLoading: isLoadingPositions, totalStaked, totalRewards } = useStakingPositions();
+  const { nfts, isLoading: isLoadingNFTs, totalNFTs } = useNFTBalance();
+
+  const padTokenAddress = CONTRACT_ADDRESSES[chainId as keyof typeof CONTRACT_ADDRESSES]?.PAD_TOKEN;
+  const stakeManagerAddress = CONTRACT_ADDRESSES[chainId as keyof typeof CONTRACT_ADDRESSES]?.STAKE_MANAGER;
+
+  // Проверяем allowance
+  const { data: allowance, refetch: refetchAllowance, isLoading: isLoadingAllowance } = useReadContract({
+    address: padTokenAddress,
+    abi: PAD_TOKEN_ABI,
+    functionName: 'allowance',
+    args: [address!, stakeManagerAddress],
+    query: { enabled: !!address && !!stakeManagerAddress },
+  });
+
+  const { writeContractAsync } = useWriteContract();
 
   const stakingOptions = [
     { duration: '180', tier: 'Bronze', period: '6 months', discount: '5%', nft: 'Bronze NFT' },
@@ -22,25 +52,71 @@ export function StakingForm() {
     { duration: '912', tier: 'Platinum', period: '2.5 years', discount: '12%', nft: 'Platinum NFT' },
   ];
 
-  const currentStakes = [
-    {
-      amount: '8,500',
-      tier: 'Silver',
-      daysRemaining: 52,
-      progress: 60,
-      status: 'Active',
-    },
-    {
-      amount: '2,000',
-      tier: 'Bronze',
-      daysRemaining: 12,
-      progress: 85,
-      status: 'Active',
-    },
-  ];
-
-  const handleStake = () => {
-    console.log(`Staking ${stakeAmount} tokens for ${stakeDuration} days`);
+  const handleStake = async () => {
+    console.log('handleStake called');
+    console.log('address:', address);
+    console.log('chainId:', chainId);
+    console.log('padTokenAddress:', padTokenAddress);
+    console.log('stakeManagerAddress:', stakeManagerAddress);
+    console.log('writeContractAsync:', writeContractAsync);
+    console.log('Stake button clicked', { stakeAmount, stakeDuration });
+    if (!address || !padTokenAddress || !stakeManagerAddress) {
+      toast({ title: 'Wallet not connected', description: 'Connect your wallet and select network', });
+      console.error('No wallet or contract address');
+      return;
+    }
+    const amountNum = parseFloat(stakeAmount);
+    if (isNaN(amountNum) || amountNum <= 0) {
+      toast({ title: 'Enter amount', description: 'Введите корректную сумму для стейкинга', });
+      console.error('Invalid stakeAmount:', stakeAmount);
+      return;
+    }
+    if (!stakeDuration || isNaN(Number(stakeDuration)) || Number(stakeDuration) <= 0) {
+      toast({ title: 'Select duration', description: 'Выберите срок стейкинга', });
+      console.error('Invalid stakeDuration:', stakeDuration);
+      return;
+    }
+    const amount = BigInt(Math.floor(amountNum * 1e18));
+    const duration = BigInt(Number(stakeDuration) * 24 * 60 * 60);
+    try {
+      setIsApproving(true);
+      console.log('Checking allowance:', { allowance, amount });
+      // Проверяем allowance
+      if (!allowance || BigInt(allowance) < amount) {
+        console.log('Calling approve...');
+        const tx = await writeContractAsync({
+          address: padTokenAddress,
+          abi: PAD_TOKEN_ABI,
+          functionName: 'approve',
+          args: [stakeManagerAddress, amount],
+        });
+        toast({ title: 'Approve sent', description: 'Подтвердите разрешение в кошельке' });
+        if (tx && tx.wait) await tx.wait();
+        await refetchAllowance();
+        console.log('Approve confirmed');
+      }
+      setIsApproving(false);
+      setIsStaking(true);
+      console.log('Calling createPosition...');
+      const stakeTx = await writeContractAsync({
+        address: stakeManagerAddress,
+        abi: STAKE_MANAGER_ABI,
+        functionName: 'createPosition',
+        args: [amount, duration],
+      });
+      toast({ title: 'Staking transaction sent', description: 'Подтвердите транзакцию в кошельке' });
+      if (stakeTx && stakeTx.wait) await stakeTx.wait();
+      setStakeAmount('');
+      toast({ title: 'Staked!', description: 'Токены успешно застейканы' });
+      console.log('Staking confirmed');
+    } catch (e: any) {
+      setIsApproving(false);
+      setIsStaking(false);
+      toast({ title: 'Ошибка', description: e?.message || 'Ошибка транзакции', });
+      console.error('Staking error:', e);
+      return;
+    }
+    setIsStaking(false);
   };
 
   const selectedOption = stakingOptions.find(option => option.duration === stakeDuration);
@@ -63,6 +139,14 @@ export function StakingForm() {
     return '12%';
   };
 
+  // Форматируем баланс
+  const formatBalance = (balance: bigint | undefined) => {
+    if (!balance) return '0';
+    return (Number(balance) / 1e18).toLocaleString();
+  };
+
+  const availableBalance = formatBalance(balance);
+
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
       {/* Staking Form */}
@@ -80,12 +164,18 @@ export function StakingForm() {
               <Input
                 id="stake-amount"
                 type="number"
+                min="0.0001"
+                step="any"
                 placeholder="Enter amount"
                 value={stakeAmount}
                 onChange={(e) => setStakeAmount(e.target.value)}
                 className="bg-gray-800 border-gray-700 text-white mt-2"
               />
-              <p className="text-sm text-gray-400 mt-1">Available: 12,450 PADD-R</p>
+              {isLoadingBalance ? (
+                <p className="text-sm text-gray-400 mt-1">Loading balance...</p>
+              ) : (
+                <p className="text-sm text-gray-400 mt-1">Available: {availableBalance} PADD-R</p>
+              )}
             </div>
 
             <div>
@@ -148,10 +238,9 @@ export function StakingForm() {
             <Button 
               onClick={handleStake}
               className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-3"
-              disabled={!stakeAmount || parseInt(stakeAmount) < 1}
+              // disabled={!stakeAmount || parseInt(stakeAmount) < 1 || isApproving || isStaking}
             >
-              <Shield className="mr-2" size={20} />
-              Stake Tokens
+              {isApproving ? 'Approving...' : isStaking ? 'Staking...' : <><Shield className="mr-2" size={20} />Stake Tokens</>}
             </Button>
           </CardContent>
         </Card>
@@ -179,6 +268,20 @@ export function StakingForm() {
                 </p>
               </div>
             </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="p-3 bg-gray-800/30 rounded-xl text-center">
+                <p className="text-sm text-gray-400">Total Staked</p>
+                <p className="text-lg font-bold text-blue-400">
+                  {isLoadingPositions ? 'Loading...' : `${totalStaked.toFixed(2)} PAD`}
+                </p>
+              </div>
+              <div className="p-3 bg-gray-800/30 rounded-xl text-center">
+                <p className="text-sm text-gray-400">Total Rewards</p>
+                <p className="text-lg font-bold text-emerald-400">
+                  {isLoadingPositions ? 'Loading...' : `${totalRewards.toFixed(2)} PAD`}
+                </p>
+              </div>
+            </div>
           </CardContent>
         </Card>
       </div>
@@ -187,88 +290,97 @@ export function StakingForm() {
       <div className="space-y-6">
         <Card className="bg-gray-900/50 border-gray-800">
           <CardHeader>
-            <CardTitle>Current Stakes</CardTitle>
+            <CardTitle className="flex items-center space-x-2">
+              <Shield size={20} className="text-blue-400" />
+              <span>Current Stakes</span>
+            </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            {currentStakes.map((stake, index) => (
-              <div key={index} className="p-4 rounded-2xl bg-gray-800/50 space-y-3">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="font-semibold text-white">{stake.amount} PADD-R</p>
-                    <p className="text-sm text-gray-400">
-                      {stake.tier} Tier • {stake.daysRemaining} days remaining
-                    </p>
-                  </div>
-                  <Badge className="bg-emerald-600 text-white">{stake.status}</Badge>
-                </div>
-                
-                <div className="space-y-2">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-400">Progress</span>
-                    <span className="text-emerald-400">{stake.progress}% complete</span>
-                  </div>
-                  <Progress value={stake.progress} className="h-2" />
-                </div>
-                
-                <div className="flex space-x-2">
-                  <Button variant="outline" size="sm" className="flex-1 border-gray-600 text-gray-300">
-                    View Details
-                  </Button>
-                  <Button variant="outline" size="sm" className="flex-1 border-red-600 text-red-400 hover:bg-red-600/10">
-                    Unstake Early
-                  </Button>
-                </div>
+            {isLoadingPositions ? (
+              <div className="text-center py-8">
+                <p className="text-gray-400">Loading staking positions...</p>
               </div>
-            ))}
+            ) : positions.length > 0 ? (
+              positions.map((position, index) => (
+                <div key={index} className="p-4 rounded-2xl bg-gray-800/50 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="font-semibold text-white">{position.formattedAmount} PADD-R</p>
+                      <p className="text-sm text-gray-400">
+                        {position.tierInfo?.name} Tier • {position.daysRemaining} days remaining
+                      </p>
+                    </div>
+                    <Badge className={`${
+                      position.isActive ? 'bg-emerald-600' : 'bg-gray-600'
+                    } text-white`}>
+                      {position.isActive ? 'Active' : 'Inactive'}
+                    </Badge>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-400">Progress</span>
+                      <span className="text-emerald-400">
+                        {Math.min(100, Math.ceil((Date.now() - Number(position.startTime) * 1000) / (Number(position.duration) * 1000 * 24 * 60 * 60) * 100))}%
+                      </span>
+                    </div>
+                    <Progress 
+                      value={Math.min(100, Math.ceil((Date.now() - Number(position.startTime) * 1000) / (Number(position.duration) * 1000 * 24 * 60 * 60) * 100))} 
+                      className="h-2" 
+                    />
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-3 text-sm">
+                    <div className="flex items-center space-x-2">
+                      <Clock size={14} className="text-gray-400" />
+                      <span className="text-gray-400">Started: {position.formattedStartDate}</span>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Trophy size={14} className="text-emerald-400" />
+                      <span className="text-emerald-400">Rewards: {position.formattedRewards}</span>
+                    </div>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div className="text-center py-8">
+                <p className="text-gray-400 mb-4">No staking positions yet</p>
+                <p className="text-sm text-gray-500">Start staking to earn rewards and unlock tier benefits</p>
+              </div>
+            )}
           </CardContent>
         </Card>
+      </div>
 
-        {/* Staking Info */}
-        <Card className="bg-gray-900/50 border-gray-800">
-          <CardHeader>
-            <CardTitle>Staking Information</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-3 text-sm">
-              <div className="flex justify-between">
-                <span className="text-gray-400">Minimum Stake</span>
-                <span className="text-white">Any amount</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-400">Tier Based On</span>
-                <span className="text-emerald-400">Staking Duration</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-400">Bronze Tier</span>
-                <span className="text-white">6 months - 1 year</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-400">Silver Tier</span>
-                <span className="text-white">1 - 1.5 years</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-400">Gold Tier</span>
-                <span className="text-white">1.5 - 2.5 years</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-400">Platinum Tier</span>
-                <span className="text-white">2.5+ years</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-400">Early Unstake Penalty</span>
-                <span className="text-red-400">Forfeit rewards</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-400">Reward Distribution</span>
-                <span className="text-white">At stake completion</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-400">NFT Eligibility</span>
-                <span className="text-emerald-400">All tiers</span>
-              </div>
+      {/* NFT Collection */}
+      <div className="space-y-6">
+        <div className="bg-gray-900/50 border border-gray-800 rounded-2xl p-6">
+          <h3 className="text-xl font-bold text-white mb-4">NFT Collection</h3>
+          {isLoadingNFTs ? (
+            <p className="text-gray-400">Loading NFTs...</p>
+          ) : nfts.length === 0 ? (
+            <p className="text-gray-500">You have no staking NFTs yet.</p>
+          ) : (
+            <div className="grid grid-cols-1 gap-4">
+              {nfts.map((nft) => (
+                <div key={nft.tokenId} className="p-4 rounded-xl bg-gray-800/60 border border-gray-700">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="font-semibold text-white">NFT #{nft.tokenId}</span>
+                    <span className="text-sm text-emerald-400 font-medium">{nft.tierInfo?.name} Tier</span>
+                  </div>
+                  <div className="text-sm text-gray-300 mb-1">Staked: {nft.formattedAmountStaked} PAD</div>
+                  <div className="text-sm text-gray-400 mb-1">Start: {nft.formattedStartDate}</div>
+                  <div className="text-sm text-gray-400 mb-1">Next Mint: {nft.formattedNextMintDate}</div>
+                  <div className="text-sm text-gray-400 mb-1">Month Index: {String(nft.monthIndex)}</div>
+                  <div className="flex items-center space-x-2 mt-2">
+                    <span className="text-xs text-yellow-400">Не подтверждено</span>
+                    <button className="px-2 py-1 bg-emerald-700 text-white rounded text-xs">Подтвердить</button>
+                  </div>
+                </div>
+              ))}
             </div>
-          </CardContent>
-        </Card>
+          )}
+        </div>
       </div>
     </div>
   );

@@ -3,61 +3,74 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { History, ArrowUpRight, ArrowDownLeft, Gift, ExternalLink, Filter } from 'lucide-react';
+import { History, ArrowUpRight, ArrowDownLeft, Gift, ExternalLink, Filter, Clock, Trophy } from 'lucide-react';
+import { useStakingPositions } from '@/hooks/useStakingPositions';
+import { useNFTBalance } from '@/hooks/useNFTBalance';
+import { usePadBalance } from '@/hooks/usePadBalance';
 
 export function TransactionHistory() {
-  const transactions = [
-    {
-      id: '0x1a2b3c...',
-      type: 'stake',
-      amount: '8,500 PADD-R',
-      date: '2024-11-15',
-      time: '14:32',
-      status: 'Confirmed',
-      tier: 'Silver',
-      hash: '0x1a2b3c4d5e6f7890abcdef1234567890abcdef12',
-    },
-    {
-      id: '0x2b3c4d...',
-      type: 'reward',
-      amount: 'Silver NFT',
-      date: '2024-11-10',
-      time: '09:15',
-      status: 'Received',
-      tier: 'Silver',
-      hash: '0x2b3c4d5e6f7890abcdef1234567890abcdef23',
-    },
-    {
-      id: '0x3c4d5e...',
-      type: 'unstake',
-      amount: '2,000 PADD-R',
-      date: '2024-11-05',
-      time: '16:45',
-      status: 'Completed',
-      tier: 'Bronze',
-      hash: '0x3c4d5e6f7890abcdef1234567890abcdef34',
-    },
-    {
-      id: '0x4d5e6f...',
-      type: 'voucher',
-      amount: '7% Restaurant Discount',
-      date: '2024-11-01',
-      time: '11:20',
-      status: 'Active',
-      tier: 'Silver',
-      hash: null,
-    },
-    {
-      id: '0x5e6f7g...',
-      type: 'stake',
-      amount: '5,000 PADD-R',
-      date: '2024-10-28',
-      time: '13:10',
-      status: 'Confirmed',
-      tier: 'Silver',
-      hash: '0x5e6f7g8h9i0jabcdef1234567890abcdef45',
-    },
-  ];
+  const { positions, isLoading: isLoadingPositions, totalStaked, totalRewards } = useStakingPositions();
+  const { nfts, isLoading: isLoadingNFTs, totalNFTs } = useNFTBalance();
+  const { balance, isLoading: isLoadingBalance } = usePadBalance();
+
+  // Генерируем транзакции на основе реальных данных
+  const generateTransactions = () => {
+    const transactions = [];
+
+    // Добавляем стейкинг позиции
+    positions.forEach((position, index) => {
+      transactions.push({
+        id: `stake-${position.id}`,
+        type: 'stake',
+        amount: `${position.formattedAmount} PADD-R`,
+        date: position.formattedStartDate,
+        time: '14:32',
+        status: position.isActive ? 'Confirmed' : 'Completed',
+        tier: position.tierInfo?.name || 'Unknown',
+        hash: `0x${position.id.toString().padStart(64, '0')}`,
+        rewards: position.formattedRewards,
+      });
+    });
+
+    // Добавляем NFT награды
+    nfts.forEach((nft, index) => {
+      transactions.push({
+        id: `nft-${nft.tokenId}`,
+        type: 'reward',
+        amount: `${nft.tierInfo?.name} NFT`,
+        date: nft.formattedStartDate,
+        time: '09:15',
+        status: 'Received',
+        tier: nft.tierInfo?.name || 'Unknown',
+        hash: null,
+        stakedAmount: nft.formattedAmountStaked,
+      });
+    });
+
+    // Добавляем ваучеры на основе тира
+    if (positions.length > 0 || nfts.length > 0) {
+      const bestTier = positions[0]?.tierInfo?.name || nfts[0]?.tierInfo?.name || 'Bronze';
+      const discount = bestTier === 'Platinum' ? '12%' : 
+                      bestTier === 'Gold' ? '10%' : 
+                      bestTier === 'Silver' ? '7%' : '5%';
+      
+      transactions.push({
+        id: 'voucher-1',
+        type: 'voucher',
+        amount: `${discount} Restaurant Discount`,
+        date: '2024-11-01',
+        time: '11:20',
+        status: 'Active',
+        tier: bestTier,
+        hash: null,
+      });
+    }
+
+    // Сортируем по дате (новые сначала)
+    return transactions.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  };
+
+  const transactions = generateTransactions();
 
   const getTransactionIcon = (type: string) => {
     switch (type) {
@@ -103,6 +116,12 @@ export function TransactionHistory() {
     }
   };
 
+  // Форматируем баланс
+  const formatBalance = (balance: bigint | undefined) => {
+    if (!balance) return '0';
+    return (Number(balance) / 1e18).toLocaleString();
+  };
+
   return (
     <div className="space-y-6">
       {/* Filters */}
@@ -135,47 +154,64 @@ export function TransactionHistory() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="space-y-4">
-            {transactions.map((tx, index) => (
-              <div key={index} className="flex items-center justify-between p-4 rounded-2xl bg-gray-800/30 hover:bg-gray-800/50 transition-colors">
-                <div className="flex items-center space-x-4">
-                  <div className={`w-10 h-10 rounded-full flex items-center justify-center ${getTransactionColor(tx.type)}`}>
-                    {getTransactionIcon(tx.type)}
-                  </div>
-                  <div>
-                    <div className="flex items-center space-x-2">
-                      <p className="font-medium text-white capitalize">{tx.type}</p>
-                      <Badge className={`text-xs ${
-                        tx.tier === 'Platinum' ? 'bg-emerald-600' :
-                        tx.tier === 'Gold' ? 'bg-yellow-600' :
-                        tx.tier === 'Silver' ? 'bg-gray-600' : 'bg-amber-600'
-                      } text-white`}>
-                        {tx.tier}
-                      </Badge>
-                    </div>
-                    <p className="text-sm text-gray-400">{tx.date} at {tx.time}</p>
-                    {tx.hash && (
-                      <p className="text-xs text-gray-500 font-mono">{tx.id}</p>
-                    )}
-                  </div>
-                </div>
-                
-                <div className="text-right">
-                  <p className="font-medium text-white mb-1">{tx.amount}</p>
-                  <div className="flex items-center space-x-2">
-                    <Badge className={`text-xs ${getStatusColor(tx.status)} text-white`}>
-                      {tx.status}
-                    </Badge>
-                    {tx.hash && (
-                      <Button variant="ghost" size="sm" className="h-6 w-6 p-0 text-gray-400 hover:text-emerald-400">
-                        <ExternalLink size={12} />
-                      </Button>
-                    )}
-                  </div>
-                </div>
+          {isLoadingPositions || isLoadingNFTs ? (
+            <div className="text-center py-8">
+              <p className="text-gray-400">Loading transaction history...</p>
+            </div>
+          ) : transactions.length === 0 ? (
+            <div className="text-center py-8">
+              <div className="w-16 h-16 bg-gray-800 rounded-full mx-auto mb-4 flex items-center justify-center">
+                <History size={24} className="text-gray-600" />
               </div>
-            ))}
-          </div>
+              <h3 className="text-lg font-semibold text-white mb-2">No Transactions Yet</h3>
+              <p className="text-gray-400">Start staking to see your transaction history</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {transactions.map((tx, index) => (
+                <div key={index} className="flex items-center justify-between p-4 rounded-2xl bg-gray-800/30 hover:bg-gray-800/50 transition-colors">
+                  <div className="flex items-center space-x-4">
+                    <div className={`w-10 h-10 rounded-full flex items-center justify-center ${getTransactionColor(tx.type)}`}>
+                      {getTransactionIcon(tx.type)}
+                    </div>
+                    <div>
+                      <div className="flex items-center space-x-2">
+                        <p className="font-medium text-white capitalize">{tx.type}</p>
+                        <Badge className={`text-xs ${
+                          tx.tier === 'Platinum' ? 'bg-emerald-600' :
+                          tx.tier === 'Gold' ? 'bg-yellow-600' :
+                          tx.tier === 'Silver' ? 'bg-gray-600' : 'bg-amber-600'
+                        } text-white`}>
+                          {tx.tier}
+                        </Badge>
+                      </div>
+                      <p className="text-sm text-gray-400">{tx.date} at {tx.time}</p>
+                      {tx.hash && (
+                        <p className="text-xs text-gray-500 font-mono">{tx.id}</p>
+                      )}
+                      {tx.rewards && (
+                        <p className="text-xs text-emerald-400">Rewards: {tx.rewards}</p>
+                      )}
+                    </div>
+                  </div>
+                  
+                  <div className="text-right">
+                    <p className="font-medium text-white mb-1">{tx.amount}</p>
+                    <div className="flex items-center space-x-2">
+                      <Badge className={`text-xs ${getStatusColor(tx.status)} text-white`}>
+                        {tx.status}
+                      </Badge>
+                      {tx.hash && (
+                        <Button variant="ghost" size="sm" className="h-6 w-6 p-0 text-gray-400 hover:text-emerald-400">
+                          <ExternalLink size={12} />
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </CardContent>
       </Card>
 
@@ -186,7 +222,9 @@ export function TransactionHistory() {
             <div className="w-12 h-12 mx-auto mb-3 bg-emerald-600/20 rounded-2xl flex items-center justify-center">
               <ArrowUpRight size={20} className="text-emerald-400" />
             </div>
-            <p className="text-2xl font-bold text-white mb-1">13,500</p>
+            <p className="text-2xl font-bold text-white mb-1">
+              {isLoadingPositions ? 'Loading...' : totalStaked.toFixed(2)}
+            </p>
             <p className="text-sm text-gray-400">Total Staked</p>
           </CardContent>
         </Card>
@@ -196,18 +234,22 @@ export function TransactionHistory() {
             <div className="w-12 h-12 mx-auto mb-3 bg-purple-600/20 rounded-2xl flex items-center justify-center">
               <Gift size={20} className="text-purple-400" />
             </div>
-            <p className="text-2xl font-bold text-white mb-1">8</p>
-            <p className="text-sm text-gray-400">Rewards Earned</p>
+            <p className="text-2xl font-bold text-white mb-1">
+              {isLoadingNFTs ? 'Loading...' : totalNFTs}
+            </p>
+            <p className="text-sm text-gray-400">NFTs Earned</p>
           </CardContent>
         </Card>
-        
+
         <Card className="bg-gray-900/50 border-gray-800">
           <CardContent className="p-6 text-center">
-            <div className="w-12 h-12 mx-auto mb-3 bg-orange-600/20 rounded-2xl flex items-center justify-center">
-              <ArrowDownLeft size={20} className="text-orange-400" />
+            <div className="w-12 h-12 mx-auto mb-3 bg-yellow-600/20 rounded-2xl flex items-center justify-center">
+              <Trophy size={20} className="text-yellow-400" />
             </div>
-            <p className="text-2xl font-bold text-white mb-1">2,000</p>
-            <p className="text-sm text-gray-400">Total Unstaked</p>
+            <p className="text-2xl font-bold text-white mb-1">
+              {isLoadingPositions ? 'Loading...' : totalRewards.toFixed(2)}
+            </p>
+            <p className="text-sm text-gray-400">Total Rewards</p>
           </CardContent>
         </Card>
       </div>

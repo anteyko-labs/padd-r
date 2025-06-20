@@ -1,8 +1,9 @@
 import './globals.css';
+import './rainbowkit.css';
 import type { Metadata } from 'next';
 import { Urbanist } from 'next/font/google';
 import { ThemeProvider } from '@/components/theme-provider';
-import { WalletProvider } from '@/components/wallet-provider';
+import { RainbowProvider } from '@/components/providers/rainbow-provider';
 
 const urbanist = Urbanist({ 
   subsets: ['latin'],
@@ -40,9 +41,9 @@ export default function RootLayout({
           enableSystem={false}
           disableTransitionOnChange
         >
-          <WalletProvider>
+          <RainbowProvider>
             {children}
-          </WalletProvider>
+          </RainbowProvider>
         </ThemeProvider>
       </body>
     </html>
