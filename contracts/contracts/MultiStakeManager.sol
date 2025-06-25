@@ -30,10 +30,10 @@ contract MultiStakeManager is AccessControl, ReentrancyGuard {
     bytes32 public constant ADMIN_ROLE = keccak256("ADMIN_ROLE");
     
     IERC20 public immutable stakingToken;
-    uint256 public constant MIN_STAKE_DURATION = 180 days; // 6 months
-    uint256 public constant MAX_STAKE_DURATION = 3650 days; // 10 years
+    uint256 public constant MIN_STAKE_DURATION = 1 hours; // 1 час
+    uint256 public constant MAX_STAKE_DURATION = 10 hours; // 10 часов
     uint256 public constant MAX_POSITIONS_PER_WALLET = 10;
-    uint256 public constant REWARD_INTERVAL = 30 days;      // 30 days
+    uint256 public constant REWARD_INTERVAL = 30 minutes; // 30 минут
 
     uint256 private _nextPositionId = 1; // Start from 1
 
@@ -79,18 +79,18 @@ contract MultiStakeManager is AccessControl, ReentrancyGuard {
 
         // Calculate tier based on duration
         uint256 tier;
-        if (duration >= 912 days) { // 30 months
+        if (duration >= 9 hours) { // 9-10 часов
             tier = 3; // Platinum
-        } else if (duration >= 547 days) { // 18 months
+        } else if (duration >= 7 hours) { // 7-9 часов
             tier = 2; // Gold
-        } else if (duration >= 365 days) { // 12 months
+        } else if (duration >= 4 hours) { // 4-7 часов
             tier = 1; // Silver
         } else {
             tier = 0; // Bronze
         }
 
-        uint256 numMints = getNumMints(duration);
-        uint256 interval = getMintInterval(duration);
+        uint256 numMints = duration / REWARD_INTERVAL;
+        uint256 interval = REWARD_INTERVAL;
         positions[positionId] = Position({
             amount: uint128(amount),
             startTime: uint64(startTime),
@@ -115,7 +115,7 @@ contract MultiStakeManager is AccessControl, ReentrancyGuard {
                 msg.sender,
                 positionId,
                 amount,
-                numMints,
+                duration / 1 hours, // lockDurationHours
                 startTime,
                 0,
                 startTime + interval
@@ -192,40 +192,27 @@ contract MultiStakeManager is AccessControl, ReentrancyGuard {
     }
 
     /**
-     * @dev Mint next NFT for a position (called by TierMonitor)
+     * @dev Mint next NFT for a position (called by TierMonitor or user)
      * @param positionId ID of the position
      */
     function mintNextNFT(uint256 positionId) external {
         Position storage position = positions[positionId];
         require(position.isActive, "Position not active");
-        require(block.timestamp >= position.nextMintAt, "Too early");
-        require(msg.sender == nftFactory || msg.sender == address(this), "Not authorized");
-        uint256 numMints = getNumMints(position.duration);
-        uint256 interval = getMintInterval(position.duration);
-        uint256 nextMintAt = position.startTime + interval * (position.monthIndex + 1);
-        require(nextMintAt <= position.startTime + position.duration, "Position expired");
-        position.monthIndex++;
-        position.nextMintAt = uint32(position.startTime + interval * (position.monthIndex + 1));
+        require(block.timestamp >= position.nextMintAt, "Too early for next NFT");
+        require(position.monthIndex < (position.duration / REWARD_INTERVAL), "All NFTs minted");
+        // Mint NFT
         if (nftFactory != address(0)) {
             IPADNFTFactory(nftFactory).mintNFT(
                 position.owner,
                 positionId,
                 position.amount,
-                numMints,
+                position.duration / 1 hours, // lockDurationHours
                 position.startTime,
-                position.monthIndex,
-                position.nextMintAt
+                position.monthIndex + 1,
+                position.nextMintAt + REWARD_INTERVAL
             );
         }
-    }
-
-    // Новый: вычисление количества минтов и интервала
-    function getNumMints(uint256 duration) public pure returns (uint256) {
-        return (duration * 12) / 365 days;
-    }
-    function getMintInterval(uint256 duration) public pure returns (uint256) {
-        uint256 numMints = getNumMints(duration);
-        require(numMints > 0, "Duration too short");
-        return duration / numMints;
+        position.monthIndex += 1;
+        position.nextMintAt += uint32(REWARD_INTERVAL);
     }
 } 

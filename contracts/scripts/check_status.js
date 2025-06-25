@@ -13,13 +13,13 @@ async function main() {
 
   // Адреса контрактов (замените на актуальные после деплоя)
   const PADToken = await ethers.getContractFactory("PADToken");
-  const padToken = PADToken.attach("0x302DD01c00100A66a5aaE4a54918b9d2e90D0772");
+  const padToken = PADToken.attach("0x5e36c2e6a50712d09Ea714a356923514B4C2338e");
 
   const MultiStakeManager = await ethers.getContractFactory("MultiStakeManager");
-  const multiStakeManager = MultiStakeManager.attach("0x9dC20133682d37aB9604F3dd05BcA6aF541De459");
+  const multiStakeManager = MultiStakeManager.attach("0xC54E3B95EC87F4a1E85860E81b4864ac059E1dDf");
 
   const PADNFTFactory = await ethers.getContractFactory("PADNFTFactory");
-  const padNFTFactory = PADNFTFactory.attach("0xAfB6C38604f3d93226b0D1681499EfC279553aB9");
+  const padNFTFactory = PADNFTFactory.attach("0xDBE1483fE39b26a92FE4B7cc3923c0cc9Ad50237");
 
   console.log("\n=== ПРОВЕРКА СТАТУСА ===");
   

@@ -52,10 +52,9 @@ async function main() {
   await transferTx.wait();
   console.log("Transferred 1000 PADToken на адрес:", walletAddress);
 
-  // Застейкаем 100 токенов (на 6 месяцев) через MultiStakeManager
+  // Застейкаем 100 токенов (на 1 час) через MultiStakeManager
   const stakeAmount = ethers.parseEther("100");
-  const stakeDurationMonths = 6;
-  const stakeDurationSeconds = stakeDurationMonths * 30 * 24 * 60 * 60; // 6 месяцев в секундах
+  const stakeDurationSeconds = 1 * 60 * 60; // 1 час в секундах
 
   // Перед approve и createPosition добавляем проверки:
   const deployerBalance = await padToken.balanceOf(deployer.address);
@@ -114,7 +113,6 @@ async function main() {
   console.log("Creating stake position...");
   console.log("stakeAmount (wei):", stakeAmount.toString());
   console.log("stakeDurationSeconds:", stakeDurationSeconds);
-  console.log("stakeDurationMonths:", stakeDurationMonths);
 
   // Проверяем все условия из createPosition
   console.log("=== Проверки createPosition ===");
@@ -142,7 +140,7 @@ async function main() {
 
   const stakeTx = await multiStakeManager.connect(userWallet).createPosition(stakeAmount, stakeDurationSeconds);
   await stakeTx.wait();
-  console.log("User staked 100 PADToken (на 6 месяцев) через MultiStakeManager.");
+  console.log("User staked 100 PADToken (на 1 час) через MultiStakeManager.");
 
   console.log("Скрипт завершен.");
 }

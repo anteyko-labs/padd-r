@@ -2,8 +2,8 @@ const hre = require("hardhat");
 
 async function main() {
   // Получаем адреса контрактов из последнего деплоя
-  const multiStakeManagerAddress = "0x67636c77EA2756569b84365bDE3263C54bB4Cf26";
-  const nftFactoryAddress = "0x6B6f1DD345d39dD109BdEDe0e355e6431b5e4110";
+  const multiStakeManagerAddress = "0xC54E3B95EC87F4a1E85860E81b4864ac059E1dDf";
+  const nftFactoryAddress = "0xDBE1483fE39b26a92FE4B7cc3923c0cc9Ad50237";
 
   // Получаем контракты
   const nftFactory = await hre.ethers.getContractAt("PADNFTFactory", nftFactoryAddress);

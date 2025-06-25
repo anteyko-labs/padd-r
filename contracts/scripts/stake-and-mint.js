@@ -1,10 +1,10 @@
 const hre = require("hardhat");
 
 async function main() {
-  // Получаем адреса контрактов из последнего деплоя
-  const padTokenAddress = "0x1E0D747B54279c3EB33085A24339D80ba66E8A8A";
-  const multiStakeManagerAddress = "0x67636c77EA2756569b84365bDE3263C54bB4Cf26";
-  const nftFactoryAddress = "0x6B6f1DD345d39dD109BdEDe0e355e6431b5e4110";
+  // Актуальные адреса контрактов (как на фронте)
+  const padTokenAddress = "0x5e36c2e6a50712d09Ea714a356923514B4C2338e";
+  const multiStakeManagerAddress = "0xC54E3B95EC87F4a1E85860E81b4864ac059E1dDf";
+  const nftFactoryAddress = "0xDBE1483fE39b26a92FE4B7cc3923c0cc9Ad50237";
 
   // Получаем контракты
   const padToken = await hre.ethers.getContractAt("PADToken", padTokenAddress);
@@ -15,13 +15,13 @@ async function main() {
   const [deployer] = await hre.ethers.getSigners();
   console.log("Using account:", deployer.address);
 
-  // Проверяем баланс токенов
-  const balance = await padToken.balanceOf(deployer.address);
-  console.log("Token balance:", hre.ethers.formatEther(balance), "PAD");
+  // Проверяем баланс токенов ДО
+  const balanceBefore = await padToken.balanceOf(deployer.address);
+  console.log("Token balance BEFORE:", hre.ethers.formatEther(balanceBefore), "PAD");
 
-  // Стейкаем 1000 PAD на 12 месяцев (Silver tier)
-  const stakeAmount = hre.ethers.parseEther("1000"); // 1000 PAD
-  const stakeDuration = 365 * 24 * 60 * 60; // 12 месяцев в секундах
+  // Стейкаем 10 PAD на 4 часа (Silver tier)
+  const stakeAmount = hre.ethers.parseEther("10"); // 10 PAD
+  const stakeDuration = 4 * 60 * 60; // 4 часа в секундах
 
   console.log("\nApproving tokens for staking...");
   const approveTx = await padToken.approve(multiStakeManagerAddress, stakeAmount);
@@ -39,7 +39,15 @@ async function main() {
 
   if (positionCreatedEvent) {
     const positionId = positionCreatedEvent.args[0];
-    console.log("Position created with ID:", positionId);
+    console.log("Position created with ID:", positionId.toString());
+
+    // Проверяем баланс токенов ПОСЛЕ
+    const balanceAfter = await padToken.balanceOf(deployer.address);
+    console.log("Token balance AFTER:", hre.ethers.formatEther(balanceAfter), "PAD");
+
+    // Получаем инфу о позиции
+    const position = await multiStakeManager.positions(positionId);
+    console.log("\nPosition info:", position);
 
     // Проверяем, появился ли NFT
     const nftBalance = await nftFactory.balanceOf(deployer.address);
@@ -54,9 +62,9 @@ async function main() {
             const metadata = await nftFactory.nftMetadata(i);
             console.log("Position ID:", metadata.positionId.toString());
             console.log("Amount Staked:", hre.ethers.formatEther(metadata.amountStaked), "PAD");
-            console.log("Lock Duration:", metadata.lockDurationMonths.toString(), "months");
+            console.log("Lock Duration (hours):", metadata.lockDurationMonths.toString());
             console.log("Tier Level:", ["Bronze", "Silver", "Gold", "Platinum"][metadata.tierLevel]);
-            console.log("Month Index:", metadata.monthIndex.toString());
+            console.log("Hour Index:", metadata.monthIndex.toString());
             console.log("Next Mint On:", new Date(Number(metadata.nextMintOn) * 1000).toISOString());
           }
         } catch (e) {
@@ -64,8 +72,10 @@ async function main() {
         }
       }
     } else {
-      console.log("Position creation event not found");
+      console.log("NFT not found after staking");
     }
+  } else {
+    console.log("Position creation event not found");
   }
 }
 

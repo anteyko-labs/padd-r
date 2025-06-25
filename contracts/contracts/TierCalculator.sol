@@ -5,25 +5,25 @@ pragma solidity ^0.8.20;
 
 contract TierCalculator {
     enum Tier {
-        Bronze,  // ≥ 6 months
-        Silver,  // ≥ 12 months
-        Gold,    // ≥ 18 months
-        Platinum // ≥ 30 months
+        Bronze,  // ≥ 1 час
+        Silver,  // ≥ 4 часа
+        Gold,    // ≥ 7 часов
+        Platinum // ≥ 9 часов
     }
 
-    uint256 private constant SIX_MONTHS = 180 days;
-    uint256 private constant TWELVE_MONTHS = 365 days;
-    uint256 private constant EIGHTEEN_MONTHS = 547 days;
-    uint256 private constant THIRTY_MONTHS = 912 days;
+    uint256 private constant ONE_HOUR = 1 hours;
+    uint256 private constant FOUR_HOURS = 4 hours;
+    uint256 private constant SEVEN_HOURS = 7 hours;
+    uint256 private constant NINE_HOURS = 9 hours;
 
     function getTier(uint256 duration) external pure returns (uint8) {
-        if (duration >= THIRTY_MONTHS) {
+        if (duration >= NINE_HOURS) {
             return uint8(Tier.Platinum);
-        } else if (duration >= EIGHTEEN_MONTHS) {
+        } else if (duration >= SEVEN_HOURS) {
             return uint8(Tier.Gold);
-        } else if (duration >= TWELVE_MONTHS) {
+        } else if (duration >= FOUR_HOURS) {
             return uint8(Tier.Silver);
-        } else if (duration >= SIX_MONTHS) {
+        } else if (duration >= ONE_HOUR) {
             return uint8(Tier.Bronze);
         } else {
             revert("Duration too short");

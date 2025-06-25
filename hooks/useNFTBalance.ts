@@ -3,15 +3,15 @@
 import { useAccount } from 'wagmi';
 import { useReadContract, useReadContracts } from 'wagmi';
 import { NFT_FACTORY_ABI } from '@/lib/contracts/abis';
-import { CONTRACT_ADDRESSES, formatTokenAmount, formatDate, TIER_LEVELS } from '@/lib/contracts/config';
+import { NFT_FACTORY_ADDRESS, formatTokenAmount, formatDate, TIER_LEVELS } from '@/lib/contracts/config';
 import { useStakingPositions } from './useStakingPositions';
 
 export function useNFTBalance() {
   const { address, chainId } = useAccount();
-  const contractAddress = CONTRACT_ADDRESSES[chainId as keyof typeof CONTRACT_ADDRESSES]?.NFT_FACTORY;
+  const contractAddress = NFT_FACTORY_ADDRESS;
 
   // Получаем баланс NFT
-  const { data: nftBalance, isLoading: isLoadingBalance } = useReadContract({
+  const { data: nftBalance, isLoading: isLoadingBalance, refetch: refetchBalance } = useReadContract({
     address: contractAddress as `0x${string}`,
     abi: NFT_FACTORY_ABI,
     functionName: 'balanceOf',
@@ -21,7 +21,7 @@ export function useNFTBalance() {
 
   // Получаем все tokenIds пользователя
   const tokenIdList = Array.from({ length: Number(nftBalance || 0) }, (_, i) => BigInt(i));
-  const { data: tokenIdsData, isLoading: isLoadingTokenIds } = useReadContracts({
+  const { data: tokenIdsData, isLoading: isLoadingTokenIds, refetch: refetchTokenIds } = useReadContracts({
     contracts: tokenIdList.map((idx) => ({
       address: contractAddress as `0x${string}`,
       abi: NFT_FACTORY_ABI,
@@ -33,7 +33,7 @@ export function useNFTBalance() {
   const tokenIds = Array.isArray(tokenIdsData) ? tokenIdsData.map((res) => res.result).filter(Boolean) : [];
 
   // Получаем метаданные для всех tokenIds
-  const { data: nftsMetaData, isLoading: isLoadingMeta } = useReadContracts({
+  const { data: nftsMetaData, isLoading: isLoadingMeta, refetch: refetchMeta } = useReadContracts({
     contracts: tokenIds.map((tokenId) => ({
       address: contractAddress as `0x${string}`,
       abi: NFT_FACTORY_ABI,
@@ -45,8 +45,8 @@ export function useNFTBalance() {
 
   // Форматируем и фильтруем только стейкинг-NFT (positionId > 0)
   const nfts = (Array.isArray(nftsMetaData) ? nftsMetaData.map((res, i) => {
-    const meta = res.result;
-    if (!meta) return null;
+    const meta: any = res.result;
+    if (!Array.isArray(meta) || meta.length < 7) return null;
     const [positionId, amountStaked, lockDurationMonths, startTimestamp, tierLevel, monthIndex, nextMintOn] = meta;
     const tierNumber = Number(tierLevel);
     const tierInfo = TIER_LEVELS[tierNumber as keyof typeof TIER_LEVELS];
@@ -82,7 +82,7 @@ export function useNFTBalance() {
   // Fallback: если NFT нет, берём максимальный tier среди всех активных позиций
   let maxTierLevel = maxTierLevelNFT;
   if (nfts.length === 0 && positions && positions.length > 0) {
-    maxTierLevel = Math.max(...positions.filter(pos => pos.isActive).map(pos => pos.tier ?? 0));
+    maxTierLevel = Math.max(...positions.filter(pos => pos && pos.isActive).map(pos => pos?.tier ?? 0));
   }
   const currentTier = maxTierLevel !== null && maxTierLevel !== undefined ? TIER_LEVELS[maxTierLevel as keyof typeof TIER_LEVELS]?.name : 'None';
 
@@ -97,5 +97,10 @@ export function useNFTBalance() {
     totalStakedInNFTs,
     currentTier,
     nextMintIn: nfts.length > 0 ? nfts[0].daysUntilNextMint : 0,
+    refetch: async () => {
+      await refetchBalance();
+      await refetchTokenIds();
+      await refetchMeta();
+    },
   };
 } 

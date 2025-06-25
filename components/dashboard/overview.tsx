@@ -8,6 +8,7 @@ import { usePadBalance } from '@/hooks/usePadBalance';
 import { useStakingPositions } from '@/hooks/useStakingPositions';
 import { useNFTBalance } from '@/hooks/useNFTBalance';
 import { useRouter } from 'next/navigation';
+import { formatDuration, formatTokenAmount } from '@/lib/contracts/config';
 
 export function Overview() {
   const { balance, isLoading: isLoadingBalance, error: balanceError } = usePadBalance();
@@ -31,11 +32,28 @@ export function Overview() {
   // Форматируем баланс
   const formatBalance = (balance: bigint | undefined) => {
     if (!balance) return '0';
-    return (Number(balance) / 1e18).toLocaleString();
+    return formatTokenAmount(balance);
+  };
+
+  // Цвета для тиров
+  const tierColors: Record<string, string> = {
+    'Bronze': 'text-amber-400',
+    'Silver': 'text-gray-400',
+    'Gold': 'text-yellow-400',
+    'Platinum': 'text-emerald-400',
+    'No Tier': 'text-gray-400',
+  };
+  const badgeColors: Record<string, string> = {
+    'Bronze': 'bg-amber-600',
+    'Silver': 'bg-gray-600',
+    'Gold': 'bg-yellow-600',
+    'Platinum': 'bg-emerald-600',
+    'No Tier': 'bg-gray-700',
   };
 
   // Получаем лучший тир (из стейкинга или NFT)
-  const bestTier = currentTier !== 'None' ? currentTier : nftTier;
+  let bestTier: string = (String(currentTier) !== 'None') ? currentTier : nftTier;
+  if (!positions.length && (!nftTier || nftTier === 'None')) bestTier = 'No Tier';
 
   const userStats = {
     balance: formatBalance(balance),
@@ -51,6 +69,10 @@ export function Overview() {
     { type: 'reward', amount: 'Silver NFT', date: '1 day ago', status: 'Received' },
     { type: 'voucher', amount: '7% Restaurant Discount', date: '3 days ago', status: 'Active' },
   ];
+
+  // При формировании списков позиций:
+  const currentPositions = positions.filter(pos => pos.isActive && !pos.isMature && pos.secondsRemaining > 0);
+  const pastPositions = positions.filter(pos => !pos.isActive || pos.isMature || pos.secondsRemaining === 0);
 
   return (
     <div className="space-y-8">
@@ -106,8 +128,8 @@ export function Overview() {
               <div>
                 <p className="text-sm text-gray-400 mb-1">Current Tier</p>
                 <div className="flex items-center space-x-2">
-                  <p className="text-2xl font-bold text-gray-300">{userStats.currentTier}</p>
-                  <Badge className="bg-gray-600 text-white">{totalNFTs} NFT</Badge>
+                  <p className={`text-2xl font-bold ${tierColors[bestTier]}`}>{bestTier}</p>
+                  <Badge className={`${badgeColors[bestTier]} text-white`}>{totalNFTs} NFT</Badge>
                 </div>
               </div>
               <div className="w-12 h-12 bg-purple-600/20 rounded-2xl flex items-center justify-center">
@@ -125,7 +147,7 @@ export function Overview() {
                 {isLoadingStaking ? (
                   <p className="text-2xl font-bold text-yellow-400">Loading...</p>
                 ) : (
-                  <p className="text-2xl font-bold text-yellow-400">{userStats.nextRewardIn} days</p>
+                  <p className="text-2xl font-bold text-yellow-400">{formatDuration(typeof userStats.nextRewardIn === 'bigint' ? userStats.nextRewardIn : BigInt(userStats.nextRewardIn))}</p>
                 )}
               </div>
               <div className="w-12 h-12 bg-yellow-600/20 rounded-2xl flex items-center justify-center">
@@ -183,9 +205,7 @@ export function Overview() {
             ) : (
               <div className="text-center py-8">
                 <p className="text-gray-400 mb-4">No staking positions yet</p>
-                <button className="px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl font-semibold transition-colors">
-                  Start Staking
-                </button>
+                <p className="text-sm text-gray-500">Start staking to earn rewards and unlock tier benefits</p>
               </div>
             )}
           </CardContent>

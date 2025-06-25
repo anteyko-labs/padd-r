@@ -22,17 +22,17 @@ contract PADNFTFactory is ERC721A, AccessControl {
     struct NFTMetadata {
         uint256 positionId;
         uint256 amountStaked;
-        uint256 lockDurationMonths;
+        uint256 lockDurationHours;
         uint256 startTimestamp;
         uint8 tierLevel;
-        uint256 monthIndex;
+        uint256 hourIndex;
         uint256 nextMintOn;
     }
 
     mapping(uint256 => NFTMetadata) public nftMetadata;
 
     event BaseURISet(string newBaseURI);
-    event NFTMinted(address indexed to, uint256 indexed tokenId, NFTMetadata meta);
+    event NFTMinted(address indexed to, uint256 indexed tokenId, NFTMetadata meta); // Фронт может слушать это событие для отображения новых NFT
 
     constructor(address _stakeManager, address _tierCalculator) ERC721A("PAD NFT (v2)", "PADNFTv2") {
         _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
@@ -51,21 +51,21 @@ contract PADNFTFactory is ERC721A, AccessControl {
         address to,
         uint256 positionId,
         uint256 amountStaked,
-        uint256 lockDurationMonths,
+        uint256 lockDurationHours,
         uint256 startTimestamp,
-        uint256 monthIndex,
+        uint256 hourIndex,
         uint256 nextMintOn
     ) external onlyRole(MINTER_ROLE) returns (uint256) {
-        uint8 tier = ITierCalculator(tierCalculator).getTier(lockDurationMonths * 30 days);
+        uint8 tier = ITierCalculator(tierCalculator).getTier(lockDurationHours * 1 hours);
         uint256 tokenId = _nextTokenId();
         _safeMint(to, 1);
         nftMetadata[tokenId] = NFTMetadata({
             positionId: positionId,
             amountStaked: amountStaked,
-            lockDurationMonths: lockDurationMonths,
+            lockDurationHours: lockDurationHours,
             startTimestamp: startTimestamp,
             tierLevel: tier,
-            monthIndex: monthIndex,
+            hourIndex: hourIndex,
             nextMintOn: nextMintOn
         });
         emit NFTMinted(to, tokenId, nftMetadata[tokenId]);

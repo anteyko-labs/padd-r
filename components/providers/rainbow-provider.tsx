@@ -13,7 +13,7 @@ const queryClient = new QueryClient();
 const config = createConfig({
   chains: [sepolia, mainnet],
   transports: {
-    [sepolia.id]: http(),
+    [sepolia.id]: http(process.env.NEXT_PUBLIC_SEPOLIA_RPC_URL || 'https://sepolia.infura.io/v3/9c259df705904ba5b2cbd4a10d00e7df'),
     [mainnet.id]: http(),
   },
 });

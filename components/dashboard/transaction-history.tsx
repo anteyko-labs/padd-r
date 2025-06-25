@@ -7,6 +7,7 @@ import { History, ArrowUpRight, ArrowDownLeft, Gift, ExternalLink, Filter, Clock
 import { useStakingPositions } from '@/hooks/useStakingPositions';
 import { useNFTBalance } from '@/hooks/useNFTBalance';
 import { usePadBalance } from '@/hooks/usePadBalance';
+import { formatTokenAmount } from '@/lib/contracts/config';
 
 export function TransactionHistory() {
   const { positions, isLoading: isLoadingPositions, totalStaked, totalRewards } = useStakingPositions();
@@ -15,20 +16,32 @@ export function TransactionHistory() {
 
   // Генерируем транзакции на основе реальных данных
   const generateTransactions = () => {
-    const transactions = [];
+    const transactions: Array<{
+      id: string;
+      type: string;
+      amount: string;
+      date: string;
+      time: string;
+      status: string;
+      tier: any;
+      hash: string | null;
+      rewards?: string;
+      stakedAmount?: string;
+    }> = [];
 
     // Добавляем стейкинг позиции
-    positions.forEach((position, index) => {
+    positions.filter(position => !!position).forEach((position, index) => {
+      const safePosition = position as NonNullable<typeof position>;
       transactions.push({
-        id: `stake-${position.id}`,
+        id: `stake-${safePosition.id}`,
         type: 'stake',
-        amount: `${position.formattedAmount} PADD-R`,
-        date: position.formattedStartDate,
+        amount: `${safePosition.formattedAmount} PADD-R`,
+        date: safePosition.formattedStartDate,
         time: '14:32',
-        status: position.isActive ? 'Confirmed' : 'Completed',
-        tier: position.tierInfo?.name || 'Unknown',
-        hash: `0x${position.id.toString().padStart(64, '0')}`,
-        rewards: position.formattedRewards,
+        status: safePosition.isActive ? 'Confirmed' : 'Completed',
+        tier: safePosition.tierInfo?.name || 'Unknown',
+        hash: `0x${safePosition.id.toString().padStart(64, '0')}`,
+        rewards: safePosition.formattedRewards,
       });
     });
 
@@ -53,7 +66,6 @@ export function TransactionHistory() {
       const discount = bestTier === 'Platinum' ? '12%' : 
                       bestTier === 'Gold' ? '10%' : 
                       bestTier === 'Silver' ? '7%' : '5%';
-      
       transactions.push({
         id: 'voucher-1',
         type: 'voucher',
@@ -119,7 +131,7 @@ export function TransactionHistory() {
   // Форматируем баланс
   const formatBalance = (balance: bigint | undefined) => {
     if (!balance) return '0';
-    return (Number(balance) / 1e18).toLocaleString();
+    return formatTokenAmount(balance);
   };
 
   return (
@@ -189,7 +201,7 @@ export function TransactionHistory() {
                       {tx.hash && (
                         <p className="text-xs text-gray-500 font-mono">{tx.id}</p>
                       )}
-                      {tx.rewards && (
+                      {'rewards' in tx && tx.rewards && (
                         <p className="text-xs text-emerald-400">Rewards: {tx.rewards}</p>
                       )}
                     </div>
@@ -253,6 +265,8 @@ export function TransactionHistory() {
           </CardContent>
         </Card>
       </div>
+
+      <div className="mt-8 text-center text-lg text-emerald-400 font-bold">Total NFTs Earned: {totalNFTs}</div>
     </div>
   );
 }

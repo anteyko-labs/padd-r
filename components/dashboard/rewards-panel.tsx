@@ -4,13 +4,32 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Gift, Download, ExternalLink, QrCode, Eye, Star, Clock, Trophy } from 'lucide-react';
-import { useNFTBalance } from '@/hooks/useNFTBalance';
+import { useNFTBalanceFromEvents } from '@/hooks/useNFTBalanceFromEvents';
 import { useStakingPositions } from '@/hooks/useStakingPositions';
 import { TIER_LEVELS } from '@/lib/contracts/config';
+import { useEffect } from 'react';
+import { BrowserProvider, Contract, JsonRpcProvider } from 'ethers';
+import { NFT_FACTORY_ADDRESS } from '@/lib/contracts/config';
 
 export function RewardsPanel() {
-  const { nfts, isLoading: isLoadingNFTs, totalNFTs, transferableNFTs, currentTier } = useNFTBalance();
+  const { nfts, isLoading: isLoadingNFTs, totalNFTs, transferableNFTs, currentTier, refetch } = useNFTBalanceFromEvents();
   const { positions, isLoading: isLoadingPositions, totalRewards } = useStakingPositions();
+
+  // Слушаем событие NFTMinted
+  useEffect(() => {
+    // Для подписки на события используем публичный RPC из .env
+    const rpcUrl = process.env.NEXT_PUBLIC_SEPOLIA_RPC_URL || 'https://sepolia.infura.io/v3/9c259df705904ba5b2cbd4a10d00e7df';
+    const rpcProvider = new JsonRpcProvider(rpcUrl);
+    const nftAddress = NFT_FACTORY_ADDRESS;
+    if (!nftAddress) return;
+    const abi = [
+      'event NFTMinted(address indexed to, uint256 indexed tokenId, tuple(uint256,uint256,uint256,uint256,uint8,uint256,uint256) meta)'
+    ];
+    const contract = new Contract(nftAddress, abi, rpcProvider);
+    const handler = () => refetch && refetch();
+    contract.on('NFTMinted', handler);
+    return () => { contract.off('NFTMinted', handler); };
+  }, [refetch]);
 
   // Генерируем NFT карточки на основе реальных данных
   const generateNFTCards = () => {
@@ -111,8 +130,8 @@ export function RewardsPanel() {
               <span className="text-gray-400">Started: {nft.formattedStartDate}</span>
             </div>
             <div className="flex items-center space-x-2">
-              <Trophy size={14} className="text-emerald-400" />
-              <span className="text-emerald-400">Next mint: {nft.daysUntilNextMint} days</span>
+              <Clock size={14} className="text-gray-400" />
+              <span className="text-gray-400">Staked for: {Number(nft.lockDurationMonths)} month{Number(nft.lockDurationMonths) === 1 ? '' : 's'}</span>
             </div>
           </div>
           
@@ -152,13 +171,26 @@ export function RewardsPanel() {
       status: 'Received' as const,
     })),
     // Токеновые награды по позициям
-    ...positions.filter(pos => pos.rewards && pos.rewards > 0).map((pos) => ({
-      date: pos.formattedNextMintDate,
-      reward: `${pos.formattedRewards} PAD Rewards`,
-      type: 'Token',
-      status: 'Earned' as const,
-    })),
+    ...positions.filter(pos => !!pos && Number(pos.rewards) > 0).map((pos) => {
+      const safePos = pos as NonNullable<typeof pos>;
+      return {
+        date: safePos.formattedNextMintDate,
+        reward: `${safePos.formattedRewards} PAD Rewards`,
+        type: 'Token',
+        status: 'Earned' as const,
+      };
+    }),
   ];
+
+  function formatDuration(seconds: number) {
+    if (!seconds || seconds <= 0) return '0 minutes';
+    const h = Math.floor(seconds / 3600);
+    const m = Math.floor((seconds % 3600) / 60);
+    let res = '';
+    if (h > 0) res += `${h} hour${h > 1 ? 's' : ''} `;
+    if (m > 0) res += `${m} minute${m > 1 ? 's' : ''}`;
+    return res.trim();
+  }
 
   return (
     <div className="space-y-8">

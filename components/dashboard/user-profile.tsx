@@ -12,7 +12,7 @@ import { useAccount } from 'wagmi';
 import { usePadBalance } from '@/hooks/usePadBalance';
 import { useStakingPositions } from '@/hooks/useStakingPositions';
 import { useNFTBalance } from '@/hooks/useNFTBalance';
-import { TIER_LEVELS } from '@/lib/contracts/config';
+import { TIER_LEVELS, formatDate, formatTokenAmount } from '@/lib/contracts/config';
 
 export function UserProfile() {
   const [email, setEmail] = useState('');
@@ -75,12 +75,13 @@ export function UserProfile() {
   };
 
   // Получаем лучший тир
-  const bestTier: string = String(currentTier) !== 'None' ? String(currentTier) : String(nftTier);
+  let bestTier: string = String(currentTier) !== 'None' ? String(currentTier) : String(nftTier);
+  if (!positions.length && (!nftTier || nftTier === 'None')) bestTier = 'No Tier';
 
   // Форматируем баланс
   const formatBalance = (balance: bigint | undefined) => {
     if (!balance) return '0';
-    return (Number(balance) / 1e18).toLocaleString();
+    return formatTokenAmount(balance);
   };
 
   const userInfo = {
@@ -97,7 +98,7 @@ export function UserProfile() {
   // Определяем достигнутые тиры на основе позиций
   const achievedTiers = new Set<string>();
   positions.forEach(position => {
-    if (position.tierInfo?.name) {
+    if (position && position.tierInfo?.name) {
       achievedTiers.add(position.tierInfo.name);
     }
   });
@@ -109,6 +110,21 @@ export function UserProfile() {
     { tier: 'Platinum', required: '2.5+ years', achieved: achievedTiers.has('Platinum') },
   ];
 
+  const tierColors: Record<string, string> = {
+    'Bronze': 'text-amber-400',
+    'Silver': 'text-gray-400',
+    'Gold': 'text-yellow-400',
+    'Platinum': 'text-emerald-400',
+    'No Tier': 'text-gray-400',
+  };
+  const badgeColors: Record<string, string> = {
+    'Bronze': 'bg-amber-600',
+    'Silver': 'bg-gray-600',
+    'Gold': 'bg-yellow-600',
+    'Platinum': 'bg-emerald-600',
+    'No Tier': 'bg-gray-700',
+  };
+
   return (
     <div className="space-y-8">
       {/* Profile Overview */}
@@ -119,7 +135,7 @@ export function UserProfile() {
               <User size={32} className="text-white" />
             </div>
             <h3 className="text-xl font-bold text-white mb-2">PADD-R Member</h3>
-            <Badge className="bg-gray-600 text-white mb-4">{userInfo.currentTier} Tier</Badge>
+            <Badge className={`${badgeColors[bestTier]} text-white mb-4`}>{bestTier} Tier</Badge>
             <p className="text-sm text-gray-400">Member since {userInfo.joinDate}</p>
           </CardContent>
         </Card>

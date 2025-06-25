@@ -4,110 +4,59 @@ async function main() {
   const [deployer] = await hre.ethers.getSigners();
   console.log("Deploying contracts with the account:", deployer.address);
 
-  // Deploy PADToken
+  // 1. Deploy PADToken (100 млн)
   console.log("\nDeploying PADToken...");
   const PADToken = await hre.ethers.getContractFactory("PADToken");
   const padToken = await PADToken.deploy();
   await padToken.waitForDeployment();
-  console.log("PADToken deployed to:", await padToken.getAddress());
+  const padTokenAddress = await padToken.getAddress();
+  console.log("PADToken deployed to:", padTokenAddress);
 
-  // Deploy TierCalculator
+  // 2. Deploy TierCalculator
   console.log("\nDeploying TierCalculator...");
   const TierCalculator = await hre.ethers.getContractFactory("TierCalculator");
   const tierCalculator = await TierCalculator.deploy();
   await tierCalculator.waitForDeployment();
-  console.log("TierCalculator deployed to:", await tierCalculator.getAddress());
+  const tierCalculatorAddress = await tierCalculator.getAddress();
+  console.log("TierCalculator deployed to:", tierCalculatorAddress);
 
-  // Deploy NFTFactory
-  console.log("\nDeploying PADNFTFactory...");
-  const PADNFTFactory = await hre.ethers.getContractFactory("PADNFTFactory");
-  const nftFactory = await PADNFTFactory.deploy();
-  await nftFactory.waitForDeployment();
-  console.log("PADNFTFactory deployed to:", await nftFactory.getAddress());
-
-  // Deploy MultiStakeManager
+  // 3. Deploy MultiStakeManager (только с адресом токена)
   console.log("\nDeploying MultiStakeManager...");
   const MultiStakeManager = await hre.ethers.getContractFactory("MultiStakeManager");
-  const stakeManager = await MultiStakeManager.deploy(
-    await padToken.getAddress(),
-    await tierCalculator.getAddress(),
-    await nftFactory.getAddress()
-  );
+  const stakeManager = await MultiStakeManager.deploy(padTokenAddress);
   await stakeManager.waitForDeployment();
-  console.log("MultiStakeManager deployed to:", await stakeManager.getAddress());
+  const stakeManagerAddress = await stakeManager.getAddress();
+  console.log("MultiStakeManager deployed to:", stakeManagerAddress);
 
-  // Deploy TierMonitor
-  console.log("\nDeploying TierMonitor...");
-  const TierMonitor = await hre.ethers.getContractFactory("TierMonitor");
-  const tierMonitor = await TierMonitor.deploy(await stakeManager.getAddress());
-  await tierMonitor.waitForDeployment();
-  console.log("TierMonitor deployed to:", await tierMonitor.getAddress());
+  // 4. Deploy PADNFTFactory (с адресами stakeManager и tierCalculator)
+  console.log("\nDeploying PADNFTFactory...");
+  const PADNFTFactory = await hre.ethers.getContractFactory("PADNFTFactory");
+  const nftFactory = await PADNFTFactory.deploy(stakeManagerAddress, tierCalculatorAddress);
+  await nftFactory.waitForDeployment();
+  const nftFactoryAddress = await nftFactory.getAddress();
+  console.log("PADNFTFactory deployed to:", nftFactoryAddress);
 
-  // Setup roles and permissions
-  console.log("\nSetting up roles and permissions...");
-  
-  // Grant MINTER_ROLE to MultiStakeManager
+  // 5. setNFTFactory в MultiStakeManager
+  console.log("\nSetting NFTFactory in MultiStakeManager...");
+  const setNftTx = await stakeManager.setNFTFactory(nftFactoryAddress);
+  await setNftTx.wait();
+  console.log("NFTFactory set in MultiStakeManager");
+
+  // 6. Выдать MINTER_ROLE для MultiStakeManager в NFTFactory
+  console.log("\nGranting MINTER_ROLE to MultiStakeManager in NFTFactory...");
   const MINTER_ROLE = await nftFactory.MINTER_ROLE();
-  const grantRoleTx = await nftFactory.grantRole(MINTER_ROLE, await stakeManager.getAddress());
+  const grantRoleTx = await nftFactory.grantRole(MINTER_ROLE, stakeManagerAddress);
   await grantRoleTx.wait();
-  console.log("Granted MINTER_ROLE to MultiStakeManager");
+  console.log("MINTER_ROLE granted to MultiStakeManager");
 
-  // Verify contracts on Etherscan
-  if (hre.network.name !== "hardhat" && hre.network.name !== "localhost") {
-    console.log("\nWaiting for block confirmations...");
-    await padToken.deployTransaction.wait(6);
-    await tierCalculator.deployTransaction.wait(6);
-    await nftFactory.deployTransaction.wait(6);
-    await stakeManager.deployTransaction.wait(6);
-    await tierMonitor.deployTransaction.wait(6);
-
-    console.log("\nVerifying contracts on Etherscan...");
-    try {
-      await hre.run("verify:verify", {
-        address: await padToken.getAddress(),
-        constructorArguments: [],
-      });
-      console.log("PADToken verified on Etherscan");
-
-      await hre.run("verify:verify", {
-        address: await tierCalculator.getAddress(),
-        constructorArguments: [],
-      });
-      console.log("TierCalculator verified on Etherscan");
-
-      await hre.run("verify:verify", {
-        address: await nftFactory.getAddress(),
-        constructorArguments: [],
-      });
-      console.log("PADNFTFactory verified on Etherscan");
-
-      await hre.run("verify:verify", {
-        address: await stakeManager.getAddress(),
-        constructorArguments: [
-          await padToken.getAddress(),
-          await tierCalculator.getAddress(),
-          await nftFactory.getAddress(),
-        ],
-      });
-      console.log("MultiStakeManager verified on Etherscan");
-
-      await hre.run("verify:verify", {
-        address: await tierMonitor.getAddress(),
-        constructorArguments: [await stakeManager.getAddress()],
-      });
-      console.log("TierMonitor verified on Etherscan");
-    } catch (error) {
-      console.error("Error verifying contracts:", error);
-    }
-  }
-
-  console.log("\nDeployment Summary:");
-  console.log("-------------------");
-  console.log("PADToken:", await padToken.getAddress());
-  console.log("TierCalculator:", await tierCalculator.getAddress());
-  console.log("PADNFTFactory:", await nftFactory.getAddress());
-  console.log("MultiStakeManager:", await stakeManager.getAddress());
-  console.log("TierMonitor:", await tierMonitor.getAddress());
+  // 7. Вывести адреса для .env и фронта
+  console.log("\n================ DEPLOYMENT SUMMARY ================");
+  console.log("PAD_TOKEN_ADDRESS=", padTokenAddress);
+  console.log("STAKE_MANAGER_ADDRESS=", stakeManagerAddress);
+  console.log("NFT_FACTORY_ADDRESS=", nftFactoryAddress);
+  console.log("TIER_CALCULATOR_ADDRESS=", tierCalculatorAddress);
+  console.log("====================================================");
+  console.log("\nAdd these addresses to your .env and frontend config!");
 }
 
 main()

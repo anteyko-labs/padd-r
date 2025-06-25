@@ -3,14 +3,14 @@
 import { useAccount } from 'wagmi';
 import { useReadContract, useReadContracts } from 'wagmi';
 import { STAKE_MANAGER_ABI } from '@/lib/contracts/abis';
-import { CONTRACT_ADDRESSES, formatTokenAmount, formatDuration, formatDate, TIER_LEVELS } from '@/lib/contracts/config';
+import { STAKE_MANAGER_ADDRESS, formatTokenAmount, formatDuration, formatDate, TIER_LEVELS } from '@/lib/contracts/config';
 
 export function useStakingPositions() {
   const { address, chainId } = useAccount();
-  const contractAddress = CONTRACT_ADDRESSES[chainId as keyof typeof CONTRACT_ADDRESSES]?.STAKE_MANAGER;
+  const contractAddress = STAKE_MANAGER_ADDRESS;
 
   // Получаем список ID позиций пользователя
-  const { data: positionIds, isLoading: isLoadingIds } = useReadContract({
+  const { data: positionIds, isLoading: isLoadingIds, refetch: refetchIds } = useReadContract({
     address: contractAddress as `0x${string}`,
     abi: STAKE_MANAGER_ABI,
     functionName: 'getUserPositions',
@@ -22,7 +22,7 @@ export function useStakingPositions() {
   const positionIdList: bigint[] = Array.isArray(positionIds) ? positionIds.filter((id): id is bigint => typeof id === 'bigint') : [];
 
   // Получаем все позиции батчем
-  const { data: positionsData, isLoading: isLoadingPositions } = useReadContracts({
+  const { data: positionsData, isLoading: isLoadingPositions, refetch: refetchPositions } = useReadContracts({
     contracts: positionIdList.map((id) => ({
       address: contractAddress as `0x${string}`,
       abi: STAKE_MANAGER_ABI,
@@ -33,7 +33,7 @@ export function useStakingPositions() {
   });
 
   // Получаем все награды батчем
-  const { data: rewardsData, isLoading: isLoadingRewards } = useReadContracts({
+  const { data: rewardsData, isLoading: isLoadingRewards, refetch: refetchRewards } = useReadContracts({
     contracts: positionIdList.map((id) => ({
       address: contractAddress as `0x${string}`,
       abi: STAKE_MANAGER_ABI,
@@ -43,16 +43,22 @@ export function useStakingPositions() {
     query: { enabled: positionIdList.length > 0 },
   });
 
-  // Форматируем все позиции
-  const positions = (positionsData || [])
-    .map((pos, idx) => {
+  // Форматируем все позиции строго по индексам positionIdList
+  const positions = positionIdList
+    .map((id, idx) => {
+      const pos = positionsData?.[idx];
       if (!pos || !pos.result) return null;
-      const [amount, startTime, duration, nextMintAt, tier, monthIndex, isActive, owner] = pos.result;
+      const result: unknown = pos.result;
+      if (!Array.isArray(result) || result.length < 8) return null;
+      const [amount, startTime, duration, nextMintAt, tier, monthIndex, isActive, owner] = result;
       const tierNumber = Number(tier);
       const tierInfo = TIER_LEVELS[tierNumber as keyof typeof TIER_LEVELS];
-      const rewards = rewardsData?.[idx]?.result || BigInt(0);
+      const rawRewards = rewardsData?.[idx]?.result ?? BigInt(0);
+      const rewards = typeof rawRewards === 'bigint' ? rawRewards : BigInt(rawRewards);
+      const now = Math.floor(Date.now() / 1000);
+      const endTime = Number(startTime) + Number(duration);
       return {
-        id: Number(positionIdList[idx] || BigInt(0)),
+        id: Number(id),
         amount,
         startTime,
         duration,
@@ -66,22 +72,26 @@ export function useStakingPositions() {
         formattedDuration: formatDuration(duration),
         formattedStartDate: formatDate(startTime),
         formattedNextMintDate: formatDate(nextMintAt),
-        formattedRewards: formatTokenAmount(rewards),
+        formattedRewards: formatTokenAmount(typeof rewards === 'bigint' ? rewards : BigInt(rewards)),
         tierInfo,
-        isMature: Date.now() >= (Number(startTime) + Number(duration)) * 1000,
-        daysRemaining: Math.max(0, Math.ceil((((Number(startTime) + Number(duration)) * 1000 - Date.now()) / (1000 * 60 * 60 * 24)))),
-        daysUntilNextMint: Math.max(0, Math.ceil(((Number(nextMintAt) * 1000 - Date.now()) / (1000 * 60 * 60 * 24)))),
+        isMature: now >= endTime,
+        secondsRemaining: Math.max(0, endTime - now),
+        secondsUntilNextMint: Math.max(0, Number(nextMintAt) - now),
       };
     })
-    .filter((pos) => !!pos);
+    .filter((pos): pos is NonNullable<typeof pos> => !!pos);
+
+  // Разделяем активные и завершённые позиции
+  const activePositionsArr = positions.filter(pos => pos.isActive);
+  const pastPositions = positions.filter(pos => !pos.isActive || pos.isMature);
 
   // Рассчитываем общую статистику
-  const totalStaked = positions.reduce((sum, pos) => sum + Number(pos.formattedAmount), 0);
-  const totalRewards = positions.reduce((sum, pos) => sum + Number(pos.formattedRewards), 0);
-  const activePositions = positions.filter(pos => pos.isActive).length;
+  const totalStaked = positions.reduce((sum, pos) => sum + Number(pos ? pos.formattedAmount : 0), 0);
+  const totalRewards = positions.reduce((sum, pos) => sum + Number(pos ? pos.formattedRewards : 0), 0);
+  const activePositions = activePositionsArr.length;
 
   // Новый: вычисляем максимальный tier среди всех активных позиций
-  const maxTier = positions.length > 0 ? Math.max(...positions.filter(pos => pos.isActive).map(pos => pos.tier ?? 0)) : 0;
+  const maxTier = positions.length > 0 ? Math.max(...activePositionsArr.map(pos => pos.tier ?? 0)) : 0;
   const currentTier = TIER_LEVELS[maxTier as keyof typeof TIER_LEVELS]?.name || 'None';
 
   return {
@@ -92,6 +102,12 @@ export function useStakingPositions() {
     totalStaked,
     totalRewards,
     currentTier,
-    nextRewardIn: positions[0]?.daysUntilNextMint || 0,
+    nextRewardIn: positions[0]?.secondsUntilNextMint || 0,
+    pastPositions,
+    refetch: async () => {
+      await refetchIds();
+      await refetchPositions();
+      await refetchRewards();
+    },
   };
 } 
