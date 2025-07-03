@@ -60,7 +60,7 @@ export function RewardsPanel() {
   }
 
   // Фильтруем NFT по выбранному статусу
-  const filteredNFTs = nfts.filter(nft => getNFTStatus(nft) === filter);
+  const filteredNFTs = nfts.filter((nft: any) => getNFTStatus(nft) === filter);
 
   // Генерируем NFT карточки на основе реальных данных
   const generateNFTCards = () => {
@@ -102,7 +102,7 @@ export function RewardsPanel() {
   };
 
   // Динамические ваучеры на основе NFT пользователя
-  const vouchers = nfts.map((nft) => ({
+  const vouchers = nfts.map((nft: any, index: number) => ({
     title: `${nft.tierInfo?.discount}% Restaurant Discount`,
     description: `Valid for ${nft.tierInfo?.name} tier holders`,
     validUntil: nft.formattedNextMintDate || '-',
@@ -113,20 +113,20 @@ export function RewardsPanel() {
   // Динамическая история наград
   const rewardHistory = [
     // NFT события
-    ...nfts.map((nft) => ({
+    ...nfts.map((nft: any, index: number) => ({
       date: nft.formattedStartDate,
       reward: `${nft.tierInfo?.name} NFT`,
-      type: 'NFT',
-      status: 'Received' as const,
+      tier: nft.tierInfo?.name,
+      amount: nft.formattedAmountStaked,
     })),
     // Токеновые награды по позициям
-    ...positions.filter(pos => !!pos && Number(pos.rewards) > 0).map((pos) => {
+    ...positions.filter((pos: any) => !!pos && Number(pos.rewards) > 0).map((pos: any) => {
       const safePos = pos as NonNullable<typeof pos>;
       return {
         date: safePos.formattedNextMintDate,
-        reward: `${safePos.formattedRewards} PAD Rewards`,
-        type: 'Token',
-        status: 'Earned' as const,
+        reward: `${safePos.tierInfo?.name} Token Reward`,
+        tier: safePos.tierInfo?.name,
+        amount: safePos.formattedRewards,
       };
     }),
   ];
@@ -140,6 +140,28 @@ export function RewardsPanel() {
     if (m > 0) res += `${m} minute${m > 1 ? 's' : ''}`;
     return res.trim();
   }
+
+  // Helper to get tier key by name
+  const getTierKeyByName = (name: string): number | undefined => {
+    const entry = Object.entries(TIER_LEVELS).find(([, value]) => value.name === name);
+    return entry ? Number(entry[0]) : undefined;
+  };
+
+  // Пример reduce с типами
+  const bestTier = filteredNFTs.reduce((max: string, pos: any, index: number) => {
+    // ...
+    return max;
+  }, 'No Tier');
+
+  filteredNFTs.forEach((pos: any, index: number) => {
+    // ...
+  });
+
+  filteredNFTs.map((nft: any, index: number) => { /* ... */ });
+
+  vouchers.map((voucher: any, index: number) => { /* ... */ });
+
+  rewardHistory.map((item: any, index: number) => { /* ... */ });
 
   return (
     <div className="space-y-8">
@@ -201,7 +223,7 @@ export function RewardsPanel() {
               <p className="text-gray-400 mb-4">Попробуйте выбрать другой фильтр</p>
             </div>
           ) : (
-            filteredNFTs.map((nft, index) => (
+            filteredNFTs.map((nft: any, index: number) => (
               <Card key={index} className="bg-gray-900/50 border-gray-800 card-hover overflow-hidden">
                 <div className="relative">
                   <img src={nft.image} alt={nft.tierInfo?.name} className="w-full h-48 object-cover" />
