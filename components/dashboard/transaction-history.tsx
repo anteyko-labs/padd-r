@@ -8,6 +8,19 @@ import { useContext } from 'react';
 import { DashboardDataContext } from './layout';
 import { formatTokenAmount } from '@/lib/contracts/config';
 
+type Transaction = {
+  id: string;
+  type: string;
+  amount: string;
+  date: string;
+  time: string;
+  status: string;
+  tier: any;
+  hash: string | null;
+  rewards?: string;
+  stakedAmount?: string;
+};
+
 export function TransactionHistory() {
   const { padBalance, stakingPositions, nftBalance } = useContext(DashboardDataContext);
   const {
@@ -25,69 +38,34 @@ export function TransactionHistory() {
 
   // Генерируем транзакции на основе реальных данных
   const generateTransactions = () => {
-    const transactions: Array<{
-      id: string;
-      type: string;
-      amount: string;
-      date: string;
-      time: string;
-      status: string;
-      tier: any;
-      hash: string | null;
-      rewards?: string;
-      stakedAmount?: string;
-    }> = [];
-
-    // Добавляем стейкинг позиции
-    positions.filter(position => !!position).forEach((position, index) => {
+    const transactions: Transaction[] = [];
+    positions.filter((position: any) => !!position).forEach((position: any, index: number) => {
       const safePosition = position as NonNullable<typeof position>;
       transactions.push({
         id: `stake-${safePosition.id}`,
         type: 'stake',
         amount: `${safePosition.formattedAmount} PADD-R`,
         date: safePosition.formattedStartDate,
-        time: '14:32',
+        time: '',
         status: safePosition.isActive ? 'Confirmed' : 'Completed',
         tier: safePosition.tierInfo?.name || 'Unknown',
         hash: `0x${safePosition.id.toString().padStart(64, '0')}`,
         rewards: safePosition.formattedRewards,
       });
     });
-
-    // Добавляем NFT награды
-    nfts.forEach((nft, index) => {
+    nfts.forEach((nft: any, index: number) => {
       transactions.push({
         id: `nft-${nft.tokenId}`,
         type: 'reward',
         amount: `${nft.tierInfo?.name} NFT`,
         date: nft.formattedStartDate,
-        time: '09:15',
+        time: '',
         status: 'Received',
         tier: nft.tierInfo?.name || 'Unknown',
         hash: null,
         stakedAmount: nft.formattedAmountStaked,
       });
     });
-
-    // Добавляем ваучеры на основе тира
-    if (positions.length > 0 || nfts.length > 0) {
-      const bestTier = positions[0]?.tierInfo?.name || nfts[0]?.tierInfo?.name || 'Bronze';
-      const discount = bestTier === 'Platinum' ? '12%' : 
-                      bestTier === 'Gold' ? '10%' : 
-                      bestTier === 'Silver' ? '7%' : '5%';
-      transactions.push({
-        id: 'voucher-1',
-        type: 'voucher',
-        amount: `${discount} Restaurant Discount`,
-        date: '2024-11-01',
-        time: '11:20',
-        status: 'Active',
-        tier: bestTier,
-        hash: null,
-      });
-    }
-
-    // Сортируем по дате (новые сначала)
     return transactions.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
   };
 

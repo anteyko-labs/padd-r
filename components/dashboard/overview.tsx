@@ -88,24 +88,12 @@ export function Overview() {
     stakingProgress: positions.length > 0 ? Math.min(100, (activePositions / positions.length) * 100) : 0,
   };
 
-  const recentActivity = [
-    { type: 'stake', amount: '2,500 PADD-R', date: '2 hours ago', status: 'Confirmed' },
-    { type: 'reward', amount: 'Silver NFT', date: '1 day ago', status: 'Received' },
-    { type: 'voucher', amount: '7% Restaurant Discount', date: '3 days ago', status: 'Active' },
-  ];
-
   // При формировании списков позиций:
   const currentPositions = positions.filter((pos: any) => pos.isActive && !pos.isMature && pos.secondsRemaining > 0);
   const pastPositions = positions.filter((pos: any) => !pos.isActive || pos.isMature || pos.secondsRemaining === 0);
 
   return (
     <div className="space-y-8">
-      {/* Welcome Section */}
-      <div>
-        <h1 className="text-3xl font-bold text-white mb-2">Welcome Back!</h1>
-        <p className="text-gray-400">Here's what's happening with your PADD-R tokens</p>
-      </div>
-
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <Card className="bg-gray-900/50 border-gray-800 card-hover">
@@ -127,7 +115,6 @@ export function Overview() {
             </div>
           </CardContent>
         </Card>
-
         <Card className="bg-gray-900/50 border-gray-800 card-hover">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
@@ -145,7 +132,6 @@ export function Overview() {
             </div>
           </CardContent>
         </Card>
-
         <Card className="bg-gray-900/50 border-gray-800 card-hover">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
@@ -162,7 +148,6 @@ export function Overview() {
             </div>
           </CardContent>
         </Card>
-
         <Card className="bg-gray-900/50 border-gray-800 card-hover">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
@@ -181,7 +166,6 @@ export function Overview() {
           </CardContent>
         </Card>
       </div>
-
       {/* Main Content Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Staking Progress */}
@@ -223,73 +207,11 @@ export function Overview() {
                 </div>
               </>
             ) : (
-              <div className="text-center py-8">
-                <p className="text-gray-400 mb-4">No staking positions yet</p>
-                <p className="text-sm text-gray-500">Start staking to earn rewards and unlock tier benefits</p>
-              </div>
+              <div className="text-center py-8 text-gray-400">No active staking positions</div>
             )}
           </CardContent>
         </Card>
-
-        {/* Recent Activity */}
-        <Card className="bg-gray-900/50 border-gray-800">
-          <CardHeader>
-            <CardTitle className="flex items-center space-x-2">
-              <Gift size={20} className="text-purple-400" />
-              <span>Recent Activity</span>
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {recentActivity.map((activity, index) => (
-              <div key={index} className="flex items-center justify-between p-4 rounded-2xl bg-gray-800/30 hover:bg-gray-800/50 transition-colors">
-                <div className="flex items-center space-x-3">
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                    activity.type === 'stake' ? 'bg-emerald-600/20' : 
-                    activity.type === 'reward' ? 'bg-purple-600/20' : 'bg-yellow-600/20'
-                  }`}>
-                    {activity.type === 'stake' ? <TrendingUp size={16} className="text-emerald-400" /> :
-                     activity.type === 'reward' ? <Gift size={16} className="text-purple-400" /> :
-                     <Gift size={16} className="text-yellow-400" />}
-                  </div>
-                  <div>
-                    <p className="font-medium text-white">{activity.amount}</p>
-                    <p className="text-sm text-gray-400">{activity.date}</p>
-                  </div>
-                </div>
-                <Badge variant="outline" className="text-xs border-gray-600 text-gray-300">
-                  {activity.status}
-                </Badge>
-              </div>
-            ))}
-          </CardContent>
-        </Card>
       </div>
-
-      {/* Quick Actions */}
-      <Card className="bg-gradient-to-r from-emerald-900/20 to-emerald-800/20 border-emerald-800">
-        <CardContent className="p-6">
-          <div className="flex flex-col md:flex-row items-center justify-between">
-            <div>
-              <h3 className="text-xl font-bold text-white mb-2">Ready to stake more?</h3>
-              <p className="text-gray-300">Increase your tier and unlock better rewards</p>
-            </div>
-            <div className="flex space-x-4 mt-4 md:mt-0">
-              <button
-                className="px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl font-semibold transition-colors"
-                onClick={() => router.push('/dashboard/stake')}
-              >
-                Stake More
-              </button>
-              <button
-                className="px-6 py-3 border border-emerald-600 text-emerald-400 hover:bg-emerald-600/10 rounded-2xl font-semibold transition-colors"
-                onClick={() => router.push('/dashboard/rewards')}
-              >
-                View Rewards
-              </button>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
     </div>
   );
 }

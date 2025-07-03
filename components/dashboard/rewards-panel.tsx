@@ -65,49 +65,15 @@ export function RewardsPanel() {
   // Генерируем NFT карточки на основе реальных данных
   const generateNFTCards = () => {
     if (isLoadingNFTs) {
-      return Array(2).fill(null).map((_, index) => (
-        <Card key={index} className="bg-gray-900/50 border-gray-800 card-hover overflow-hidden">
-          <div className="relative">
-            <div className="w-full h-48 bg-gray-800 animate-pulse"></div>
-          </div>
-          <CardHeader>
-            <div className="h-6 bg-gray-800 rounded animate-pulse mb-2"></div>
-            <div className="h-4 bg-gray-800 rounded animate-pulse"></div>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              <div className="h-4 bg-gray-800 rounded animate-pulse"></div>
-              <div className="h-4 bg-gray-800 rounded animate-pulse"></div>
-            </div>
-          </CardContent>
-        </Card>
-      ));
+      return <div className="text-center py-8 text-gray-400">Loading NFTs...</div>;
     }
-
     if (nfts.length === 0) {
-      return (
-        <div className="col-span-full text-center py-12">
-          <div className="w-24 h-24 bg-gray-800 rounded-full mx-auto mb-4 flex items-center justify-center">
-            <Trophy size={32} className="text-gray-600" />
-          </div>
-          <h3 className="text-xl font-semibold text-white mb-2">No NFTs Yet</h3>
-          <p className="text-gray-400 mb-4">Start staking to earn your first NFT reward</p>
-          <Button className="bg-emerald-600 hover:bg-emerald-700">
-            Start Staking
-          </Button>
-        </div>
-      );
+      return <div className="text-center py-8 text-gray-400">No NFTs yet</div>;
     }
-
-    return nfts.map((nft, index) => (
+    return nfts.map((nft: any, index: number) => (
       <Card key={index} className="bg-gray-900/50 border-gray-800 card-hover overflow-hidden">
         <div className="relative">
-          <div className="w-full h-48 bg-gradient-to-br from-purple-600/20 to-emerald-600/20 flex items-center justify-center">
-            <div className="text-center">
-              <Trophy size={48} className="text-emerald-400 mx-auto mb-2" />
-              <p className="text-emerald-400 font-semibold">{nft.tierInfo?.name} NFT</p>
-            </div>
-          </div>
+          <img src={nft.image} alt={nft.tierInfo?.name} className="w-full h-48 object-cover" />
           <div className="absolute top-4 right-4">
             <Badge className={`${
               nft.tierInfo?.name === 'Platinum' ? 'bg-emerald-600' :
@@ -117,66 +83,18 @@ export function RewardsPanel() {
               {nft.tierInfo?.name}
             </Badge>
           </div>
-          {nft.isTransferable && (
-            <div className="absolute bottom-4 left-4">
-              <Badge className="bg-emerald-600 text-white">Tradeable</Badge>
-            </div>
-          )}
         </div>
-        
         <CardHeader>
           <CardTitle className="text-lg text-white">{nft.tierInfo?.name} NFT #{nft.tokenId}</CardTitle>
-          <div className="flex items-center justify-between">
-            <Badge variant="outline" className="border-emerald-600 text-emerald-400">
-              Active
-            </Badge>
-            <span className="text-emerald-400 font-bold">{nft.formattedAmountStaked}</span>
-          </div>
         </CardHeader>
-        
         <CardContent className="space-y-4">
-          <div>
-            <p className="text-sm text-gray-400 mb-2">Benefits</p>
-            <div className="space-y-1">
-              <div className="text-sm text-gray-300 flex items-center">
-                <Star size={12} className="text-emerald-400 mr-2" />
-                {nft.tierInfo?.discount}% discount on services
-              </div>
-              <div className="text-sm text-gray-300 flex items-center">
-                <Star size={12} className="text-emerald-400 mr-2" />
-                {nft.tierInfo?.name} tier benefits
-              </div>
-              {nft.isTransferable && (
-                <div className="text-sm text-gray-300 flex items-center">
-                  <Star size={12} className="text-emerald-400 mr-2" />
-                  Tradeable on marketplace
-                </div>
-              )}
-            </div>
-          </div>
-          
           <div className="grid grid-cols-2 gap-2 text-sm">
             <div className="flex items-center space-x-2">
-              <Clock size={14} className="text-gray-400" />
               <span className="text-gray-400">Started: {nft.formattedStartDate}</span>
             </div>
             <div className="flex items-center space-x-2">
-              <Clock size={14} className="text-gray-400" />
               <span className="text-gray-400">Staked for: {Number(nft.lockDurationMonths)} month{Number(nft.lockDurationMonths) === 1 ? '' : 's'}</span>
             </div>
-          </div>
-          
-          <div className="flex gap-2">
-            <Button variant="outline" size="sm" className="flex-1 border-gray-600 text-gray-300">
-              <Eye size={16} className="mr-1" />
-              Details
-            </Button>
-            {nft.isTransferable && (
-              <Button size="sm" className="flex-1 bg-emerald-600 hover:bg-emerald-700">
-                <ExternalLink size={16} className="mr-1" />
-                Trade
-              </Button>
-            )}
           </div>
         </CardContent>
       </Card>
@@ -286,12 +204,7 @@ export function RewardsPanel() {
             filteredNFTs.map((nft, index) => (
               <Card key={index} className="bg-gray-900/50 border-gray-800 card-hover overflow-hidden">
                 <div className="relative">
-                  <div className="w-full h-48 bg-gradient-to-br from-purple-600/20 to-emerald-600/20 flex items-center justify-center">
-                    <div className="text-center">
-                      <Trophy size={48} className="text-emerald-400 mx-auto mb-2" />
-                      <p className="text-emerald-400 font-semibold">{nft.tierInfo?.name} NFT</p>
-                    </div>
-                  </div>
+                  <img src={nft.image} alt={nft.tierInfo?.name} className="w-full h-48 object-cover" />
                   <div className="absolute top-4 right-4">
                     <Badge className={`${
                       nft.tierInfo?.name === 'Platinum' ? 'bg-emerald-600' :
@@ -301,66 +214,18 @@ export function RewardsPanel() {
                       {nft.tierInfo?.name}
                     </Badge>
                   </div>
-                  {nft.isTransferable && (
-                    <div className="absolute bottom-4 left-4">
-                      <Badge className="bg-emerald-600 text-white">Tradeable</Badge>
-                    </div>
-                  )}
                 </div>
-                
                 <CardHeader>
                   <CardTitle className="text-lg text-white">{nft.tierInfo?.name} NFT #{nft.tokenId}</CardTitle>
-                  <div className="flex items-center justify-between">
-                    <Badge variant="outline" className="border-emerald-600 text-emerald-400">
-                      Active
-                    </Badge>
-                    <span className="text-emerald-400 font-bold">{nft.formattedAmountStaked}</span>
-                  </div>
                 </CardHeader>
-                
                 <CardContent className="space-y-4">
-                  <div>
-                    <p className="text-sm text-gray-400 mb-2">Benefits</p>
-                    <div className="space-y-1">
-                      <div className="text-sm text-gray-300 flex items-center">
-                        <Star size={12} className="text-emerald-400 mr-2" />
-                        {nft.tierInfo?.discount}% discount on services
-                      </div>
-                      <div className="text-sm text-gray-300 flex items-center">
-                        <Star size={12} className="text-emerald-400 mr-2" />
-                        {nft.tierInfo?.name} tier benefits
-                      </div>
-                      {nft.isTransferable && (
-                        <div className="text-sm text-gray-300 flex items-center">
-                          <Star size={12} className="text-emerald-400 mr-2" />
-                          Tradeable on marketplace
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                  
                   <div className="grid grid-cols-2 gap-2 text-sm">
                     <div className="flex items-center space-x-2">
-                      <Clock size={14} className="text-gray-400" />
                       <span className="text-gray-400">Started: {nft.formattedStartDate}</span>
                     </div>
                     <div className="flex items-center space-x-2">
-                      <Clock size={14} className="text-gray-400" />
                       <span className="text-gray-400">Staked for: {Number(nft.lockDurationMonths)} month{Number(nft.lockDurationMonths) === 1 ? '' : 's'}</span>
                     </div>
-                  </div>
-                  
-                  <div className="flex gap-2">
-                    <Button variant="outline" size="sm" className="flex-1 border-gray-600 text-gray-300">
-                      <Eye size={16} className="mr-1" />
-                      Details
-                    </Button>
-                    {nft.isTransferable && (
-                      <Button size="sm" className="flex-1 bg-emerald-600 hover:bg-emerald-700">
-                        <ExternalLink size={16} className="mr-1" />
-                        Trade
-                      </Button>
-                    )}
                   </div>
                 </CardContent>
               </Card>
@@ -375,7 +240,7 @@ export function RewardsPanel() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {vouchers.length === 0 ? (
             <div className="col-span-full text-center py-12 text-gray-400">No active vouchers</div>
-          ) : vouchers.map((voucher, index) => (
+          ) : vouchers.map((voucher: any, index: number) => (
             <Card key={index} className="bg-gray-900/50 border-gray-800 card-hover">
               <CardHeader>
                 <CardTitle className="text-lg text-white">{voucher.title}</CardTitle>
@@ -423,7 +288,7 @@ export function RewardsPanel() {
           <div className="space-y-4">
             {rewardHistory.length === 0 ? (
               <div className="text-center text-gray-400">No reward history</div>
-            ) : rewardHistory.map((item, index) => (
+            ) : rewardHistory.map((item: any, index: number) => (
               <div key={index} className="flex items-center justify-between p-4 rounded-2xl bg-gray-800/30">
                 <div className="flex items-center space-x-3">
                   <div className="w-8 h-8 bg-purple-600/20 rounded-full flex items-center justify-center">
