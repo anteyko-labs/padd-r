@@ -7,7 +7,7 @@ import { NFT_FACTORY_ADDRESS, formatTokenAmount, formatDate, TIER_LEVELS } from 
 import { useStakingPositions } from './useStakingPositions';
 
 export function useNFTBalance() {
-  const { address, chainId } = useAccount();
+  const { address } = useAccount();
   const contractAddress = NFT_FACTORY_ADDRESS;
 
   // Получаем баланс NFT
@@ -70,31 +70,20 @@ export function useNFTBalance() {
     };
   }).filter(Boolean) : []) as any[];
 
-  // Логи для диагностики
-  console.log('NFT tokenIds:', tokenIds);
-  console.log('NFT meta:', nftsMetaData);
-
-  const { positions } = useStakingPositions();
-
-  // Вычисляем максимальный tierLevel среди всех стейкинг-NFT
+  // Вычисляем максимальный tier среди всех стейкинг-NFT
   const maxTierLevelNFT = nfts.length > 0 ? Math.max(...nfts.map((nft) => nft.tierLevel)) : null;
-
-  // Fallback: если NFT нет, берём максимальный tier среди всех активных позиций
   let maxTierLevel = maxTierLevelNFT;
-  if (nfts.length === 0 && positions && positions.length > 0) {
-    maxTierLevel = Math.max(...positions.filter(pos => pos && pos.isActive).map(pos => pos?.tier ?? 0));
+  if (nfts.length === 0) {
+    maxTierLevel = null;
   }
   const currentTier = maxTierLevel !== null && maxTierLevel !== undefined ? TIER_LEVELS[maxTierLevel as keyof typeof TIER_LEVELS]?.name : 'None';
-
-  const transferableNFTs = nfts.filter((nft) => nft.isTransferable).length;
-  const totalStakedInNFTs = nfts.reduce((sum, nft) => sum + Number(nft.formattedAmountStaked), 0);
 
   return {
     nfts,
     isLoading: isLoadingBalance || isLoadingTokenIds || isLoadingMeta,
     totalNFTs: nfts.length,
-    transferableNFTs,
-    totalStakedInNFTs,
+    transferableNFTs: nfts.filter((nft) => nft.isTransferable).length,
+    totalStakedInNFTs: nfts.reduce((sum, nft) => sum + Number(nft.formattedAmountStaked), 0),
     currentTier,
     nextMintIn: nfts.length > 0 ? nfts[0].daysUntilNextMint : 0,
     refetch: async () => {

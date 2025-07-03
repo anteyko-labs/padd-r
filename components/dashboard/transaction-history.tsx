@@ -4,15 +4,24 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { History, ArrowUpRight, ArrowDownLeft, Gift, ExternalLink, Filter, Clock, Trophy } from 'lucide-react';
-import { useStakingPositions } from '@/hooks/useStakingPositions';
-import { useNFTBalance } from '@/hooks/useNFTBalance';
-import { usePadBalance } from '@/hooks/usePadBalance';
+import { useContext } from 'react';
+import { DashboardDataContext } from './layout';
 import { formatTokenAmount } from '@/lib/contracts/config';
 
 export function TransactionHistory() {
-  const { positions, isLoading: isLoadingPositions, totalStaked, totalRewards } = useStakingPositions();
-  const { nfts, isLoading: isLoadingNFTs, totalNFTs } = useNFTBalance();
-  const { balance, isLoading: isLoadingBalance } = usePadBalance();
+  const { padBalance, stakingPositions, nftBalance } = useContext(DashboardDataContext);
+  const {
+    positions = [],
+    isLoading: isLoadingPositions,
+    totalStaked,
+    totalRewards,
+  } = stakingPositions;
+  const {
+    nfts = [],
+    isLoading: isLoadingNFTs,
+    totalNFTs,
+  } = nftBalance;
+  const { balance, isLoading: isLoadingBalance } = padBalance;
 
   // Генерируем транзакции на основе реальных данных
   const generateTransactions = () => {

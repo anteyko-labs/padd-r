@@ -7,13 +7,27 @@ import { Gift, Download, ExternalLink, QrCode, Eye, Star, Clock, Trophy } from '
 import { useNFTBalanceFromEvents } from '@/hooks/useNFTBalanceFromEvents';
 import { useStakingPositions } from '@/hooks/useStakingPositions';
 import { TIER_LEVELS } from '@/lib/contracts/config';
-import { useEffect } from 'react';
+import { useEffect, useState, useContext } from 'react';
 import { BrowserProvider, Contract, JsonRpcProvider } from 'ethers';
 import { NFT_FACTORY_ADDRESS } from '@/lib/contracts/config';
+import { DashboardDataContext } from './layout';
 
 export function RewardsPanel() {
-  const { nfts, isLoading: isLoadingNFTs, totalNFTs, transferableNFTs, currentTier, refetch } = useNFTBalanceFromEvents();
-  const { positions, isLoading: isLoadingPositions, totalRewards } = useStakingPositions();
+  const { nftBalance, stakingPositions } = useContext(DashboardDataContext);
+  const {
+    nfts = [],
+    isLoading: isLoadingNFTs,
+    totalNFTs = 0,
+    transferableNFTs = 0,
+    currentTier,
+    refetch,
+  } = nftBalance;
+  const {
+    positions = [],
+    isLoading: isLoadingPositions,
+    totalRewards = 0,
+  } = stakingPositions;
+  const [filter, setFilter] = useState<'active' | 'expired' | 'used' | 'transferred'>('active');
 
   // Слушаем событие NFTMinted
   useEffect(() => {
@@ -30,6 +44,23 @@ export function RewardsPanel() {
     contract.on('NFTMinted', handler);
     return () => { contract.off('NFTMinted', handler); };
   }, [refetch]);
+
+  // Функция для вычисления статуса NFT
+  function getNFTStatus(nft: any) {
+    // Примерная логика, доработай под свои правила:
+    // - active: transferable и срок не истёк
+    // - expired: если есть поле nextMintOn и оно в прошлом
+    // - used: если есть поле used или аналогичное (заглушка)
+    // - transferred: если есть поле owner и он не совпадает с текущим пользователем (заглушка)
+    const now = Date.now() / 1000;
+    if (nft.used) return 'used';
+    if (nft.owner && nft.owner !== nft.currentUser) return 'transferred';
+    if (nft.nextMintOn && Number(nft.nextMintOn) < now) return 'expired';
+    return 'active';
+  }
+
+  // Фильтруем NFT по выбранному статусу
+  const filteredNFTs = nfts.filter(nft => getNFTStatus(nft) === filter);
 
   // Генерируем NFT карточки на основе реальных данных
   const generateNFTCards = () => {
@@ -194,11 +225,147 @@ export function RewardsPanel() {
 
   return (
     <div className="space-y-8">
+      {/* Фильтр по статусу */}
+      <div className="flex gap-2 mb-4">
+        <Button
+          variant="ghost"
+          size="sm"
+          className={`transition-colors rounded-full px-4 py-2 font-semibold border-2
+            ${filter === 'active' ? 'bg-emerald-600 text-white border-emerald-600 shadow-lg' : 'bg-transparent border-emerald-800 text-emerald-400 hover:bg-emerald-900/20'}
+          `}
+          onClick={() => setFilter('active')}
+        >
+          Актуальные
+        </Button>
+        <Button
+          variant="ghost"
+          size="sm"
+          className={`transition-colors rounded-full px-4 py-2 font-semibold border-2
+            ${filter === 'expired' ? 'bg-yellow-600 text-white border-yellow-600 shadow-lg' : 'bg-transparent border-yellow-800 text-yellow-400 hover:bg-yellow-900/20'}
+          `}
+          onClick={() => setFilter('expired')}
+        >
+          Истёк срок
+        </Button>
+        <Button
+          variant="ghost"
+          size="sm"
+          className={`transition-colors rounded-full px-4 py-2 font-semibold border-2
+            ${filter === 'used' ? 'bg-gray-600 text-white border-gray-600 shadow-lg' : 'bg-transparent border-gray-800 text-gray-400 hover:bg-gray-900/20'}
+          `}
+          onClick={() => setFilter('used')}
+        >
+          Использованы
+        </Button>
+        <Button
+          variant="ghost"
+          size="sm"
+          className={`transition-colors rounded-full px-4 py-2 font-semibold border-2
+            ${filter === 'transferred' ? 'bg-purple-600 text-white border-purple-600 shadow-lg' : 'bg-transparent border-purple-800 text-purple-400 hover:bg-purple-900/20'}
+          `}
+          onClick={() => setFilter('transferred')}
+        >
+          Переданы
+        </Button>
+      </div>
       {/* NFT Rewards */}
       <div>
         <h2 className="text-2xl font-bold text-white mb-6">NFT Collection</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {generateNFTCards()}
+          {isLoadingNFTs ? (
+            generateNFTCards()
+          ) : filteredNFTs.length === 0 ? (
+            <div className="col-span-full text-center py-12">
+              <div className="w-24 h-24 bg-gray-800 rounded-full mx-auto mb-4 flex items-center justify-center">
+                <Trophy size={32} className="text-gray-600" />
+              </div>
+              <h3 className="text-xl font-semibold text-white mb-2">Нет NFT с выбранным статусом</h3>
+              <p className="text-gray-400 mb-4">Попробуйте выбрать другой фильтр</p>
+            </div>
+          ) : (
+            filteredNFTs.map((nft, index) => (
+              <Card key={index} className="bg-gray-900/50 border-gray-800 card-hover overflow-hidden">
+                <div className="relative">
+                  <div className="w-full h-48 bg-gradient-to-br from-purple-600/20 to-emerald-600/20 flex items-center justify-center">
+                    <div className="text-center">
+                      <Trophy size={48} className="text-emerald-400 mx-auto mb-2" />
+                      <p className="text-emerald-400 font-semibold">{nft.tierInfo?.name} NFT</p>
+                    </div>
+                  </div>
+                  <div className="absolute top-4 right-4">
+                    <Badge className={`${
+                      nft.tierInfo?.name === 'Platinum' ? 'bg-emerald-600' :
+                      nft.tierInfo?.name === 'Gold' ? 'bg-yellow-600' :
+                      nft.tierInfo?.name === 'Silver' ? 'bg-gray-600' : 'bg-amber-600'
+                    } text-white`}>
+                      {nft.tierInfo?.name}
+                    </Badge>
+                  </div>
+                  {nft.isTransferable && (
+                    <div className="absolute bottom-4 left-4">
+                      <Badge className="bg-emerald-600 text-white">Tradeable</Badge>
+                    </div>
+                  )}
+                </div>
+                
+                <CardHeader>
+                  <CardTitle className="text-lg text-white">{nft.tierInfo?.name} NFT #{nft.tokenId}</CardTitle>
+                  <div className="flex items-center justify-between">
+                    <Badge variant="outline" className="border-emerald-600 text-emerald-400">
+                      Active
+                    </Badge>
+                    <span className="text-emerald-400 font-bold">{nft.formattedAmountStaked}</span>
+                  </div>
+                </CardHeader>
+                
+                <CardContent className="space-y-4">
+                  <div>
+                    <p className="text-sm text-gray-400 mb-2">Benefits</p>
+                    <div className="space-y-1">
+                      <div className="text-sm text-gray-300 flex items-center">
+                        <Star size={12} className="text-emerald-400 mr-2" />
+                        {nft.tierInfo?.discount}% discount on services
+                      </div>
+                      <div className="text-sm text-gray-300 flex items-center">
+                        <Star size={12} className="text-emerald-400 mr-2" />
+                        {nft.tierInfo?.name} tier benefits
+                      </div>
+                      {nft.isTransferable && (
+                        <div className="text-sm text-gray-300 flex items-center">
+                          <Star size={12} className="text-emerald-400 mr-2" />
+                          Tradeable on marketplace
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-2 text-sm">
+                    <div className="flex items-center space-x-2">
+                      <Clock size={14} className="text-gray-400" />
+                      <span className="text-gray-400">Started: {nft.formattedStartDate}</span>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Clock size={14} className="text-gray-400" />
+                      <span className="text-gray-400">Staked for: {Number(nft.lockDurationMonths)} month{Number(nft.lockDurationMonths) === 1 ? '' : 's'}</span>
+                    </div>
+                  </div>
+                  
+                  <div className="flex gap-2">
+                    <Button variant="outline" size="sm" className="flex-1 border-gray-600 text-gray-300">
+                      <Eye size={16} className="mr-1" />
+                      Details
+                    </Button>
+                    {nft.isTransferable && (
+                      <Button size="sm" className="flex-1 bg-emerald-600 hover:bg-emerald-700">
+                        <ExternalLink size={16} className="mr-1" />
+                        Trade
+                      </Button>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            ))
+          )}
         </div>
       </div>
 

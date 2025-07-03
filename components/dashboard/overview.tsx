@@ -4,29 +4,29 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Wallet, Shield, Trophy, Clock, TrendingUp, Gift } from 'lucide-react';
-import { usePadBalance } from '@/hooks/usePadBalance';
-import { useStakingPositions } from '@/hooks/useStakingPositions';
-import { useNFTBalance } from '@/hooks/useNFTBalance';
 import { useRouter } from 'next/navigation';
-import { formatDuration, formatTokenAmount } from '@/lib/contracts/config';
+import { formatDuration, formatTokenAmount, TIER_LEVELS } from '@/lib/contracts/config';
+import React, { useContext } from 'react';
+import { DashboardDataContext } from './layout';
 
 export function Overview() {
-  const { balance, isLoading: isLoadingBalance, error: balanceError } = usePadBalance();
-  const { 
-    positions, 
-    isLoading: isLoadingStaking, 
-    totalStaked, 
-    totalRewards, 
-    activePositions, 
-    currentTier, 
-    nextRewardIn 
-  } = useStakingPositions();
-  const { 
-    totalNFTs, 
-    isLoading: isLoadingNFTs, 
-    totalStakedInNFTs, 
-    currentTier: nftTier 
-  } = useNFTBalance();
+  const { padBalance, stakingPositions, nftBalance } = useContext(DashboardDataContext);
+  const { balance, isLoading: isLoadingBalance, error: balanceError } = padBalance;
+  const {
+    positions = [],
+    isLoading: isLoadingStaking,
+    totalStaked = 0,
+    totalRewards = 0,
+    activePositions = 0,
+    currentTier = 'None',
+    nextRewardIn = 0,
+  } = stakingPositions;
+  const {
+    totalNFTs = 0,
+    isLoading: isLoadingNFTs,
+    totalStakedInNFTs = 0,
+    currentTier: nftTier = 'None',
+  } = nftBalance;
   const router = useRouter();
 
   // Форматируем баланс
@@ -52,8 +52,32 @@ export function Overview() {
   };
 
   // Получаем лучший тир (из стейкинга или NFT)
-  let bestTier: string = (String(currentTier) !== 'None') ? currentTier : nftTier;
-  if (!positions.length && (!nftTier || nftTier === 'None')) bestTier = 'No Tier';
+  const activePositionsArr = (positions ?? []).filter((pos: any) => pos.isActive && !pos.isMature && pos.secondsRemaining > 0);
+
+  // Helper to get tier key by name
+  const getTierKeyByName = (name: string): number | undefined => {
+    const entry = Object.entries(TIER_LEVELS).find(([, value]) => value.name === name);
+    return entry ? Number(entry[0]) : undefined;
+  };
+
+  let bestTier: string = 'No Tier';
+  if (activePositionsArr.length > 0) {
+    bestTier = activePositionsArr.reduce((max: any, pos: any) => {
+      if (pos.tierInfo && pos.tierInfo.name) {
+        const tierKey = getTierKeyByName(pos.tierInfo.name);
+        const maxKey = getTierKeyByName(max);
+        if (
+          max === 'No Tier' ||
+          (tierKey !== undefined && maxKey !== undefined && tierKey > maxKey)
+        ) {
+          return pos.tierInfo.name;
+        }
+      }
+      return max;
+    }, 'No Tier');
+  } else if ((totalNFTs ?? 0) > 0 && nftTier && nftTier !== 'None') {
+    bestTier = nftTier;
+  }
 
   const userStats = {
     balance: formatBalance(balance),
@@ -71,8 +95,8 @@ export function Overview() {
   ];
 
   // При формировании списков позиций:
-  const currentPositions = positions.filter(pos => pos.isActive && !pos.isMature && pos.secondsRemaining > 0);
-  const pastPositions = positions.filter(pos => !pos.isActive || pos.isMature || pos.secondsRemaining === 0);
+  const currentPositions = positions.filter((pos: any) => pos.isActive && !pos.isMature && pos.secondsRemaining > 0);
+  const pastPositions = positions.filter((pos: any) => !pos.isActive || pos.isMature || pos.secondsRemaining === 0);
 
   return (
     <div className="space-y-8">
@@ -193,12 +217,8 @@ export function Overview() {
                 
                 <div className="grid grid-cols-2 gap-4 text-center">
                   <div className="p-3 bg-gray-800/30 rounded-xl">
-                    <p className="text-sm text-gray-400">Total Rewards</p>
-                    <p className="text-lg font-bold text-emerald-400">{userStats.totalRewards} PAD</p>
-                  </div>
-                  <div className="p-3 bg-gray-800/30 rounded-xl">
                     <p className="text-sm text-gray-400">NFTs Owned</p>
-                    <p className="text-lg font-bold text-purple-400">{totalNFTs}</p>
+                    <p className="text-lg font-bold text-purple-400">{isLoadingNFTs ? 'Loading...' : totalNFTs}</p>
                   </div>
                 </div>
               </>

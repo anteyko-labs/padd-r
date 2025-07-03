@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useContext } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -13,6 +13,7 @@ import { usePadBalance } from '@/hooks/usePadBalance';
 import { useStakingPositions } from '@/hooks/useStakingPositions';
 import { useNFTBalance } from '@/hooks/useNFTBalance';
 import { TIER_LEVELS, formatDate, formatTokenAmount } from '@/lib/contracts/config';
+import { DashboardDataContext } from './layout';
 
 export function UserProfile() {
   const [email, setEmail] = useState('');
@@ -21,10 +22,21 @@ export function UserProfile() {
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(false);
 
+  const { padBalance, stakingPositions, nftBalance } = useContext(DashboardDataContext);
   const { address, chainId } = useAccount();
-  const { balance, isLoading: isLoadingBalance } = usePadBalance();
-  const { positions, isLoading: isLoadingPositions, totalStaked, totalRewards, currentTier } = useStakingPositions();
-  const { totalNFTs, isLoading: isLoadingNFTs, currentTier: nftTier } = useNFTBalance();
+  const { balance, isLoading: isLoadingBalance } = padBalance;
+  const {
+    positions = [],
+    isLoading: isLoadingPositions,
+    totalStaked = 0,
+    totalRewards = 0,
+    currentTier = 'None',
+  } = stakingPositions;
+  const {
+    totalNFTs = 0,
+    isLoading: isLoadingNFTs,
+    currentTier: nftTier = 'None',
+  } = nftBalance;
 
   useEffect(() => {
     if (!address) return;
@@ -74,9 +86,33 @@ export function UserProfile() {
     return `${address.slice(0, 6)}...${address.slice(-4)}`;
   };
 
-  // Получаем лучший тир
-  let bestTier: string = String(currentTier) !== 'None' ? String(currentTier) : String(nftTier);
-  if (!positions.length && (!nftTier || nftTier === 'None')) bestTier = 'No Tier';
+  // Получаем только активные позиции
+  const activePositions = (positions ?? []).filter(pos => pos.isActive && ((Date.now() / 1000) < (Number(pos.startTime) + Number(pos.duration))));
+
+  // Helper to get tier key by name
+  const getTierKeyByName = (name: string): number | undefined => {
+    const entry = Object.entries(TIER_LEVELS).find(([, value]) => value.name === name);
+    return entry ? Number(entry[0]) : undefined;
+  };
+
+  let bestTier: string = 'No Tier';
+  if (activePositions.length > 0) {
+    bestTier = activePositions.reduce((max, pos) => {
+      if (pos.tierInfo && pos.tierInfo.name) {
+        const tierKey = getTierKeyByName(pos.tierInfo.name);
+        const maxKey = getTierKeyByName(max);
+        if (
+          max === 'No Tier' ||
+          (tierKey !== undefined && maxKey !== undefined && tierKey > maxKey)
+        ) {
+          return pos.tierInfo.name;
+        }
+      }
+      return max;
+    }, 'No Tier');
+  } else if ((totalNFTs ?? 0) > 0 && nftTier && nftTier !== 'None') {
+    bestTier = nftTier;
+  }
 
   // Форматируем баланс
   const formatBalance = (balance: bigint | undefined) => {
@@ -165,7 +201,7 @@ export function UserProfile() {
               <div className="flex justify-between">
                 <span className="text-gray-400">NFTs Owned</span>
                 <span className="text-purple-400 font-semibold">
-                  {isLoadingNFTs ? 'Loading...' : userInfo.nftCount}
+                  {isLoadingNFTs ? 'Loading...' : totalNFTs}
                 </span>
               </div>
             </div>
@@ -330,7 +366,7 @@ export function UserProfile() {
               <div className="mt-2 space-y-2">
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-400">Active Positions</span>
-                  <span className="text-white">{positions.length}</span>
+                  <span className="text-white">{activePositions.length}</span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-400">Total NFTs</span>

@@ -6,7 +6,7 @@ import { STAKE_MANAGER_ABI } from '@/lib/contracts/abis';
 import { STAKE_MANAGER_ADDRESS, formatTokenAmount, formatDuration, formatDate, TIER_LEVELS } from '@/lib/contracts/config';
 
 export function useStakingPositions() {
-  const { address, chainId } = useAccount();
+  const { address } = useAccount();
   const contractAddress = STAKE_MANAGER_ADDRESS;
 
   // Получаем список ID позиций пользователя

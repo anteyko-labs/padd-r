@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -17,6 +17,16 @@ import { PAD_TOKEN_ADDRESS, STAKE_MANAGER_ADDRESS } from '@/lib/contracts/config
 import { useToast } from '@/hooks/use-toast';
 import { useNFTBalance } from '@/hooks/useNFTBalance';
 import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogAction } from '@/components/ui/alert-dialog';
+import axios from 'axios';
+import { NFT_FACTORY_ABI } from '@/lib/contracts/abis';
+import { NFT_FACTORY_ADDRESS } from '@/lib/contracts/config';
+
+const tierFolders: Record<string, string> = {
+  Bronze: 'tier1',
+  Silver: 'tier2',
+  Gold: 'tier3',
+  Platinum: 'tier4',
+};
 
 // Безопасный перевод строки в wei (bigint)
 function parseUnits(amount: string, decimals: number = 18): bigint {
@@ -31,6 +41,8 @@ export function StakingForm() {
   const [isApproving, setIsApproving] = useState(false);
   const [isStaking, setIsStaking] = useState(false);
   const [showDecimalsDialog, setShowDecimalsDialog] = useState(false);
+  const [userNFTImages, setUserNFTImages] = useState<Record<string, string>>({}); // tokenId -> image
+  const [nftImages, setNftImages] = useState<Record<number, string>>({}); // tokenId -> image_name
 
   const { toast } = useToast();
   const { address, chainId } = useAccount();
@@ -51,6 +63,7 @@ export function StakingForm() {
   });
 
   const { writeContractAsync } = useWriteContract();
+  const { writeContractAsync: writeNFTContract } = useWriteContract();
 
   const stakingOptions = [
     { duration: '1', tier: 'Bronze', period: '1 hour', discount: '5%', nft: 'Bronze NFT' },
@@ -59,6 +72,20 @@ export function StakingForm() {
     { duration: '9', tier: 'Platinum', period: '9 hours', discount: '12%', nft: 'Platinum NFT' },
     { duration: '10', tier: 'Platinum', period: '10 hours', discount: '12%', nft: 'Platinum NFT' },
   ];
+
+  // Получить и сохранить картинку для NFT после стейкинга
+  const assignNFTImage = async (address: string, tier: string) => {
+    try {
+      // 1. Получить неиспользованную картинку
+      const res = await axios.get(`/api/nft-image?address=${address}&tier=${tier}`);
+      const image = res.data.image;
+      // 2. Сохранить выбранную картинку
+      await axios.post('/api/nft-image', { address, tier, image });
+      return image;
+    } catch (e) {
+      return null;
+    }
+  };
 
   const handleStake = async () => {
     console.log('handleStake called');
@@ -138,6 +165,15 @@ export function StakingForm() {
         });
         await refetchBalance();
         await refetchPositions();
+        // --- Новый блок: получить и сохранить картинку для NFT ---
+        const tier = selectedOption?.tier;
+        if (address && tier) {
+          const image = await assignNFTImage(address, tier);
+          if (image) {
+            setUserNFTImages(prev => ({ ...prev, [`${address}_${tier}_${Date.now()}`]: image }));
+          }
+        }
+        // --- конец блока ---
       } catch (err) {
         if (typeof window !== 'undefined') {
           console.error('createPosition error:', err);
@@ -191,6 +227,31 @@ export function StakingForm() {
   const now = Date.now() / 1000;
   const currentPositions = positions.filter(pos => pos.isActive && ((now - Number(pos.startTime)) / Number(pos.duration)) * 100 < 100);
   const pastPositions = positions.filter(pos => !pos.isActive || ((now - Number(pos.startTime)) / Number(pos.duration)) * 100 >= 100);
+
+  // Автоматически назначать изображение для каждого NFT
+  useEffect(() => {
+    async function assignImages() {
+      if (!address || !nfts) return;
+      for (const nft of nfts) {
+        if (!nftImages[nft.tokenId]) {
+          try {
+            // 1. Получить или назначить изображение через API
+            const res = await axios.get(`/api/nft-image?address=${address}&tier=${nft.tierInfo?.name}&token_id=${nft.tokenId}`);
+            const image = res.data.image;
+            if (image) {
+              // 2. Сохранить связь, если это новое назначение
+              await axios.post('/api/nft-image', { address, tier: nft.tierInfo?.name, token_id: nft.tokenId, image });
+              setNftImages(prev => ({ ...prev, [nft.tokenId]: image }));
+            }
+          } catch (e) {
+            // Если уже есть изображение, просто пропускаем
+          }
+        }
+      }
+    }
+    assignImages();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [nfts, address]);
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
@@ -349,17 +410,29 @@ export function StakingForm() {
               currentPositions.map((position, index) => {
                 const safePosition = position as NonNullable<typeof position>;
                 const nftsForPosition = nfts.filter(nft => nft.positionId === safePosition.id);
+                const nftImage = nftsForPosition[0] ? nftImages[nftsForPosition[0].tokenId] : undefined;
                 const progress = Math.min(100, ((now - Number(safePosition.startTime)) / Number(safePosition.duration)) * 100);
-                const completedPeriods = Math.floor((now - Number(safePosition.startTime)) / Number(safePosition.duration));
-                const rewardsCount = 1 + Math.max(0, completedPeriods);
+                const maxRewards = Math.floor(Number(safePosition.duration) / 1800); // 30 минут = 1800 секунд
+                const claimedRewards = nftsForPosition.length;
+                const unclaimedRewards = Math.max(0, maxRewards - claimedRewards);
+                const canClaim = unclaimedRewards > 0 && Number(safePosition.nextMintAt) < now;
                 return (
                   <div key={index} className="p-4 rounded-2xl bg-gray-800/50 space-y-3">
                     <div className="flex items-center justify-between">
-                      <div>
-                        <p className="font-semibold text-white">{safePosition.formattedAmount} PADD-R</p>
-                        <p className="text-sm text-gray-400">
-                          {safePosition.tierInfo?.name} Tier • {formatDuration(safePosition.duration)} remaining
-                        </p>
+                      <div className="flex items-center">
+                        {nftImage && (
+                          <img
+                            src={`/assets/${tierFolders[safePosition.tierInfo?.name]}/${nftImage}`}
+                            alt="NFT"
+                            className="w-12 h-12 object-cover rounded mr-3"
+                          />
+                        )}
+                        <div>
+                          <p className="font-semibold text-white">{safePosition.formattedAmount} PADD-R</p>
+                          <p className="text-sm text-gray-400">
+                            {safePosition.tierInfo?.name} Tier • {formatDuration(safePosition.duration)} remaining
+                          </p>
+                        </div>
                       </div>
                       <Badge className={`${safePosition.isActive ? 'bg-emerald-600' : 'bg-gray-600'} text-white`}>
                         {safePosition.isActive ? 'Active' : 'Inactive'}
@@ -384,9 +457,44 @@ export function StakingForm() {
                       </div>
                       <div className="flex items-center space-x-2">
                         <Trophy size={14} className="text-emerald-400" />
-                        <span className="text-emerald-400 font-bold">Rewards: {rewardsCount}</span>
+                        <span className="text-emerald-400 font-bold">
+                          Rewards: {claimedRewards} / {maxRewards}
+                          {unclaimedRewards > 0 && (
+                            <span className="ml-2 text-yellow-400">(+{unclaimedRewards} unclaimed)</span>
+                          )}
+                        </span>
                       </div>
                     </div>
+                    {/* Кнопка Claim NFT */}
+                    {canClaim && (
+                      <Button
+                        className="mt-2 bg-emerald-600 hover:bg-emerald-700 w-full"
+                        onClick={async () => {
+                          console.log('Claim NFT clicked', safePosition.id, {
+                            address: STAKE_MANAGER_ADDRESS,
+                            abi: STAKE_MANAGER_ABI,
+                            functionName: 'mintNextNFT',
+                            args: [BigInt(safePosition.id)],
+                          });
+                          try {
+                            const result = await writeContractAsync({
+                              address: STAKE_MANAGER_ADDRESS,
+                              abi: STAKE_MANAGER_ABI,
+                              functionName: 'mintNextNFT',
+                              args: [BigInt(safePosition.id)],
+                            });
+                            console.log('mintNextNFT result:', result);
+                            toast({ title: 'Claimed!', description: 'NFT успешно заминчен' });
+                            await refetchPositions();
+                          } catch (e: any) {
+                            console.error('mintNextNFT error:', e);
+                            toast({ title: 'Ошибка', description: e?.message || 'Ошибка mintNextNFT' });
+                          }
+                        }}
+                      >
+                        Claim NFT
+                      </Button>
+                    )}
                   </div>
                 );
               })
@@ -416,8 +524,7 @@ export function StakingForm() {
                   const safePosition = position as NonNullable<typeof position>;
                   const nftsForPosition = nfts.filter(nft => nft.positionId === safePosition.id);
                   const progress = Math.min(100, ((now - Number(safePosition.startTime)) / Number(safePosition.duration)) * 100);
-                  const completedPeriods = Math.floor((now - Number(safePosition.startTime)) / Number(safePosition.duration));
-                  const rewardsCount = 1 + Math.max(0, completedPeriods);
+                  const rewardsCount = nftsForPosition.length;
                   return (
                     <div key={idx} className="p-4 rounded-2xl bg-gray-800/50 space-y-3">
                       <div className="flex items-center justify-between">
@@ -484,22 +591,30 @@ export function StakingForm() {
             <p className="text-gray-500">You have no staking NFTs yet.</p>
           ) : (
             <div className="grid grid-cols-1 gap-4">
-              {nfts.map((nft) => (
-                <div key={nft.tokenId} className="p-4 rounded-xl bg-gray-800/60 border border-gray-700">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="font-semibold text-white">NFT #{nft.tokenId}</span>
-                    <span className="text-sm text-emerald-400 font-medium">{nft.tierInfo?.name} Tier</span>
+              {nfts.map((nft) => {
+                const imgKey = `${address}_${nft.tierInfo?.name}`;
+                const image = userNFTImages[imgKey];
+                const nftsForPosition = nfts.filter(nft => nft.positionId === nft.id);
+                return (
+                  <div key={nft.tokenId} className="p-4 rounded-xl bg-gray-800/60 border border-gray-700">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="font-semibold text-white">NFT #{nft.tokenId}</span>
+                      <span className="text-sm text-emerald-400 font-medium">{nftsForPosition.length} NFT</span>
+                    </div>
+                    {image && (
+                      <img src={`/assets/${tierFolders[nft.tierInfo?.name]}/${image}`} alt="NFT" className="w-24 h-24 object-cover rounded mb-2" />
+                    )}
+                    <div className="text-sm text-gray-300 mb-1">Staked: {nft.formattedAmountStaked} PAD</div>
+                    <div className="text-sm text-gray-400 mb-1">Start: {nft.formattedStartDate}</div>
+                    <div className="text-sm text-gray-400 mb-1">Next Mint: {nft.formattedNextMintDate}</div>
+                    <div className="text-sm text-gray-400 mb-1">Month Index: {String(nft.monthIndex)}</div>
+                    <div className="flex items-center space-x-2 mt-2">
+                      <span className="text-xs text-yellow-400">Не подтверждено</span>
+                      <button className="px-2 py-1 bg-emerald-700 text-white rounded text-xs">Подтвердить</button>
+                    </div>
                   </div>
-                  <div className="text-sm text-gray-300 mb-1">Staked: {nft.formattedAmountStaked} PAD</div>
-                  <div className="text-sm text-gray-400 mb-1">Start: {nft.formattedStartDate}</div>
-                  <div className="text-sm text-gray-400 mb-1">Next Mint: {nft.formattedNextMintDate}</div>
-                  <div className="text-sm text-gray-400 mb-1">Month Index: {String(nft.monthIndex)}</div>
-                  <div className="flex items-center space-x-2 mt-2">
-                    <span className="text-xs text-yellow-400">Не подтверждено</span>
-                    <button className="px-2 py-1 bg-emerald-700 text-white rounded text-xs">Подтвердить</button>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>
