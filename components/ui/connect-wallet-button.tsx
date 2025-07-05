@@ -4,7 +4,7 @@ import { useConnectModal } from '@rainbow-me/rainbowkit';
 import { useAccount, useDisconnect, useConnect } from 'wagmi';
 import { Wallet } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 
 function isMobile() {
   if (typeof window === 'undefined') return false;
@@ -48,24 +48,57 @@ export function ConnectWalletButton({ className }: { className?: string }) {
   const { openConnectModal } = useConnectModal();
   const { isConnected, address } = useAccount();
   const { disconnect } = useDisconnect();
-  const { connect, connectors } = useConnect();
+  const { connect, connectors, error: connectError, isPending } = useConnect();
   const [showMobileMenu, setShowMobileMenu] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [log, setLog] = useState<string[]>([]);
+  const triedConnectors = useRef<Set<string>>(new Set());
 
   const isMobileDevice = isMobile();
   const isWalletBrowser = isInWalletBrowser();
 
+  const logMsg = (msg: string) => {
+    setLog((prev) => [...prev, msg]);
+    console.log(msg);
+  };
+
+  const tryConnectorsSequentially = async () => {
+    setErrorMsg(null);
+    triedConnectors.current.clear();
+    // Попробуем injected, потом остальные
+    const ordered = [
+      connectors.find((c) => c.id === 'injected'),
+      ...connectors.filter((c) => c.id !== 'injected')
+    ].filter(Boolean);
+    for (const connector of ordered) {
+      if (!connector) continue;
+      if (triedConnectors.current.has(connector.id)) continue;
+      triedConnectors.current.add(connector.id);
+      logMsg(`Пробую коннектор: ${connector.name}`);
+      try {
+        await connect({ connector });
+        logMsg(`Успешно подключено через: ${connector.name}`);
+        setErrorMsg(null);
+        return;
+      } catch (err: any) {
+        logMsg(`Ошибка при подключении через ${connector.name}: ${err?.message || err}`);
+        setErrorMsg(`Ошибка при подключении через ${connector.name}: ${err?.message || err}`);
+      }
+    }
+    setErrorMsg('Не удалось подключиться ни через один из доступных кошельков.');
+  };
+
   const handleConnect = () => {
+    setErrorMsg(null);
+    setLog([]);
     if (isConnected) {
       disconnect();
       return;
     }
 
-    // Если мы уже в браузере кошелька - подключаемся через injected provider
+    // Если мы уже в браузере кошелька - пробуем все варианты
     if (isMobileDevice && isWalletBrowser) {
-      const injectedConnector = connectors.find(c => c.id === 'injected');
-      if (injectedConnector) {
-        connect({ connector: injectedConnector });
-      }
+      tryConnectorsSequentially();
       return;
     }
 
@@ -105,7 +138,8 @@ export function ConnectWalletButton({ className }: { className?: string }) {
       {/* Подсказка для мобильных wallet browsers */}
       {isMobileDevice && isWalletBrowser && (
         <div className="mb-2 text-xs text-gray-400 text-center">
-          Нажмите <b>Connect Wallet</b> для подключения через мобильный кошелек
+          Нажмите <b>Connect Wallet</b> для подключения через мобильный кошелек<br/>
+          <span className="text-emerald-400">window.ethereum: {typeof window !== 'undefined' && window.ethereum ? 'есть' : 'нет'}</span>
         </div>
       )}
       <Button
@@ -113,11 +147,21 @@ export function ConnectWalletButton({ className }: { className?: string }) {
         className={className}
         variant="outline"
         size="lg"
+        disabled={isPending}
       >
         <Wallet className="mr-2" size={20} />
         Connect Wallet
       </Button>
-
+      {/* Показываем ошибку, если есть */}
+      {errorMsg && (
+        <div className="mt-2 text-xs text-red-400 text-center whitespace-pre-line">{errorMsg}</div>
+      )}
+      {/* Показываем логи */}
+      {log.length > 0 && (
+        <div className="mt-2 text-xs text-gray-500 bg-gray-900 rounded p-2 max-h-32 overflow-y-auto">
+          {log.map((l, i) => <div key={i}>{l}</div>)}
+        </div>
+      )}
       {/* Мобильное меню выбора кошельков */}
       {showMobileMenu && isMobileDevice && !isWalletBrowser && (
         <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
@@ -125,7 +169,6 @@ export function ConnectWalletButton({ className }: { className?: string }) {
             <h3 className="text-xl font-bold text-white mb-6 text-center">
               Выберите кошелек
             </h3>
-            
             <div className="space-y-4">
               {mobileWallets.map((wallet) => (
                 <button
@@ -141,7 +184,6 @@ export function ConnectWalletButton({ className }: { className?: string }) {
                 </button>
               ))}
             </div>
-
             <button
               onClick={() => setShowMobileMenu(false)}
               className="w-full mt-6 p-4 text-gray-400 hover:text-white text-center font-medium"
