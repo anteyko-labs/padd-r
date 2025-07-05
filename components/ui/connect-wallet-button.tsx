@@ -51,21 +51,14 @@ export function ConnectWalletButton({ className }: { className?: string }) {
   const { connect, connectors, error: connectError, isPending } = useConnect();
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
-  const [log, setLog] = useState<string[]>([]);
   const triedConnectors = useRef<Set<string>>(new Set());
 
   const isMobileDevice = isMobile();
   const isWalletBrowser = isInWalletBrowser();
 
-  const logMsg = (msg: string) => {
-    setLog((prev) => [...prev, msg]);
-    console.log(msg);
-  };
-
   const tryConnectorsSequentially = async () => {
     setErrorMsg(null);
     triedConnectors.current.clear();
-    // Попробуем injected, потом остальные
     const ordered = [
       connectors.find((c) => c.id === 'injected'),
       ...connectors.filter((c) => c.id !== 'injected')
@@ -74,14 +67,11 @@ export function ConnectWalletButton({ className }: { className?: string }) {
       if (!connector) continue;
       if (triedConnectors.current.has(connector.id)) continue;
       triedConnectors.current.add(connector.id);
-      logMsg(`Пробую коннектор: ${connector.name}`);
       try {
         await connect({ connector });
-        logMsg(`Успешно подключено через: ${connector.name}`);
         setErrorMsg(null);
         return;
       } catch (err: any) {
-        logMsg(`Ошибка при подключении через ${connector.name}: ${err?.message || err}`);
         setErrorMsg(`Ошибка при подключении через ${connector.name}: ${err?.message || err}`);
       }
     }
@@ -90,25 +80,21 @@ export function ConnectWalletButton({ className }: { className?: string }) {
 
   const handleConnect = () => {
     setErrorMsg(null);
-    setLog([]);
     if (isConnected) {
       disconnect();
       return;
     }
 
-    // Если мы уже в браузере кошелька - пробуем все варианты
     if (isMobileDevice && isWalletBrowser) {
       tryConnectorsSequentially();
       return;
     }
 
-    // На мобильном, но не в браузере кошелька - показываем меню выбора
     if (isMobileDevice) {
       setShowMobileMenu(true);
       return;
     }
 
-    // На ПК - используем RainbowKit modal
     if (openConnectModal) {
       openConnectModal();
     }
@@ -135,7 +121,6 @@ export function ConnectWalletButton({ className }: { className?: string }) {
 
   return (
     <div className="relative">
-      {/* Подсказка для мобильных wallet browsers */}
       {isMobileDevice && isWalletBrowser && (
         <div className="mb-2 text-xs text-gray-400 text-center">
           Нажмите <b>Connect Wallet</b> для подключения через мобильный кошелек<br/>
@@ -152,17 +137,9 @@ export function ConnectWalletButton({ className }: { className?: string }) {
         <Wallet className="mr-2" size={20} />
         Connect Wallet
       </Button>
-      {/* Показываем ошибку, если есть */}
       {errorMsg && (
         <div className="mt-2 text-xs text-red-400 text-center whitespace-pre-line">{errorMsg}</div>
       )}
-      {/* Показываем логи */}
-      {log.length > 0 && (
-        <div className="mt-2 text-xs text-gray-500 bg-gray-900 rounded p-2 max-h-32 overflow-y-auto">
-          {log.map((l, i) => <div key={i}>{l}</div>)}
-        </div>
-      )}
-      {/* Мобильное меню выбора кошельков */}
       {showMobileMenu && isMobileDevice && !isWalletBrowser && (
         <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-gray-900 border border-gray-700 rounded-2xl p-6 w-full max-w-sm">
