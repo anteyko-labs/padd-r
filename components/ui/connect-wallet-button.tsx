@@ -123,8 +123,7 @@ export function ConnectWalletButton({ className }: { className?: string }) {
     <div className="relative">
       {isMobileDevice && isWalletBrowser && (
         <div className="mb-2 text-xs text-gray-400 text-center">
-          Нажмите <b>Connect Wallet</b> для подключения через мобильный кошелек<br/>
-          <span className="text-emerald-400">window.ethereum: {typeof window !== 'undefined' && window.ethereum ? 'есть' : 'нет'}</span>
+          Нажмите <b>Connect Wallet</b> для подключения через мобильный кошелек
         </div>
       )}
       <Button
