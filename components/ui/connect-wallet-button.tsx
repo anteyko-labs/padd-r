@@ -1,7 +1,7 @@
 'use client';
 
 import { useConnectModal } from '@rainbow-me/rainbowkit';
-import { useAccount, useDisconnect, useConnect, useConnectors } from 'wagmi';
+import { useAccount, useDisconnect, useConnect } from 'wagmi';
 import { Wallet } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useState, useEffect } from 'react';
@@ -52,13 +52,18 @@ export function ConnectWalletButton({ className }: { className?: string }) {
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [isInWallet, setIsInWallet] = useState(false);
 
+  // Авто-подключение через injected provider, если сайт открыт внутри кошелька
   useEffect(() => {
     setIsInWallet(isInWalletBrowser());
-  }, []);
+    if (typeof window !== 'undefined' && window.ethereum) {
+      const injected = connectors.find(c => c.id === 'injected');
+      if (injected && !isConnected) {
+        connect({ connector: injected });
+      }
+    }
+  }, [connect, connectors, isConnected]);
 
   const handleConnect = () => {
-    console.log('Connect button clicked');
-    
     if (isConnected) {
       disconnect();
       return;
@@ -66,46 +71,30 @@ export function ConnectWalletButton({ className }: { className?: string }) {
 
     // Если мы уже в браузере кошелька - используем стандартное подключение
     if (isInWallet) {
-      console.log('Already in wallet browser, using standard connection...');
-      try {
-        if (openConnectModal) {
-          openConnectModal();
-        } else {
-          // Fallback: попробуем подключиться напрямую к injected connector
-          const injectedConnector = connectors.find(c => c.id === 'injected');
-          if (injectedConnector) {
-            connect({ connector: injectedConnector });
-          }
+      if (openConnectModal) {
+        openConnectModal();
+      } else {
+        const injectedConnector = connectors.find(c => c.id === 'injected');
+        if (injectedConnector) {
+          connect({ connector: injectedConnector });
         }
-      } catch (error) {
-        console.error('Error connecting in wallet browser:', error);
       }
       return;
     }
 
     // На мобильном, но не в браузере кошелька - показываем меню выбора
     if (isMobile()) {
-      console.log('Mobile device detected, showing wallet menu...');
       setShowMobileMenu(true);
       return;
     }
 
     // На ПК - используем RainbowKit modal
-    try {
-      if (openConnectModal) {
-        console.log('Opening RainbowKit modal...');
-        openConnectModal();
-      } else {
-        console.error('RainbowKit modal not available');
-      }
-    } catch (error) {
-      console.error('Error opening connect modal:', error);
+    if (openConnectModal) {
+      openConnectModal();
     }
   };
 
   const handleWalletSelect = (deepLink: string) => {
-    console.log('Opening wallet deep-link:', deepLink);
-    // Открываем deep-link в новом окне/вкладке
     window.open(deepLink, '_blank');
     setShowMobileMenu(false);
   };
