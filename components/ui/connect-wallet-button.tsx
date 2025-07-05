@@ -4,7 +4,7 @@ import { useConnectModal } from '@rainbow-me/rainbowkit';
 import { useAccount, useDisconnect, useConnect } from 'wagmi';
 import { Wallet } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 
 function isMobile() {
   if (typeof window === 'undefined') return false;
@@ -50,18 +50,9 @@ export function ConnectWalletButton({ className }: { className?: string }) {
   const { disconnect } = useDisconnect();
   const { connect, connectors } = useConnect();
   const [showMobileMenu, setShowMobileMenu] = useState(false);
-  const [isInWallet, setIsInWallet] = useState(false);
 
-  // Авто-подключение через injected provider, если сайт открыт внутри кошелька
-  useEffect(() => {
-    setIsInWallet(isInWalletBrowser());
-    if (typeof window !== 'undefined' && window.ethereum) {
-      const injected = connectors.find(c => c.id === 'injected');
-      if (injected && !isConnected) {
-        connect({ connector: injected });
-      }
-    }
-  }, [connect, connectors, isConnected]);
+  const isMobileDevice = isMobile();
+  const isWalletBrowser = isInWalletBrowser();
 
   const handleConnect = () => {
     if (isConnected) {
@@ -69,21 +60,17 @@ export function ConnectWalletButton({ className }: { className?: string }) {
       return;
     }
 
-    // Если мы уже в браузере кошелька - используем стандартное подключение
-    if (isInWallet) {
-      if (openConnectModal) {
-        openConnectModal();
-      } else {
-        const injectedConnector = connectors.find(c => c.id === 'injected');
-        if (injectedConnector) {
-          connect({ connector: injectedConnector });
-        }
+    // Если мы уже в браузере кошелька - подключаемся через injected provider
+    if (isMobileDevice && isWalletBrowser) {
+      const injectedConnector = connectors.find(c => c.id === 'injected');
+      if (injectedConnector) {
+        connect({ connector: injectedConnector });
       }
       return;
     }
 
     // На мобильном, но не в браузере кошелька - показываем меню выбора
-    if (isMobile()) {
+    if (isMobileDevice) {
       setShowMobileMenu(true);
       return;
     }
@@ -115,6 +102,12 @@ export function ConnectWalletButton({ className }: { className?: string }) {
 
   return (
     <div className="relative">
+      {/* Подсказка для мобильных wallet browsers */}
+      {isMobileDevice && isWalletBrowser && (
+        <div className="mb-2 text-xs text-gray-400 text-center">
+          Нажмите <b>Connect Wallet</b> для подключения через мобильный кошелек
+        </div>
+      )}
       <Button
         onClick={handleConnect}
         className={className}
@@ -126,7 +119,7 @@ export function ConnectWalletButton({ className }: { className?: string }) {
       </Button>
 
       {/* Мобильное меню выбора кошельков */}
-      {showMobileMenu && isMobile() && !isInWallet && (
+      {showMobileMenu && isMobileDevice && !isWalletBrowser && (
         <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-gray-900 border border-gray-700 rounded-2xl p-6 w-full max-w-sm">
             <h3 className="text-xl font-bold text-white mb-6 text-center">
