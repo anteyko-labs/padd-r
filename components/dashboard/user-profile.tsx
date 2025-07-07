@@ -8,7 +8,9 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { User, ExternalLink, Shield, Mail, Phone, MapPin, Settings, Trophy, Clock } from 'lucide-react';
-import { useAccount } from 'wagmi';
+import { useAccount, useWriteContract } from 'wagmi';
+import { STAKE_MANAGER_ABI, NFT_FACTORY_ABI } from '@/lib/contracts/abis';
+import { STAKE_MANAGER_ADDRESS, NFT_FACTORY_ADDRESS } from '@/lib/contracts/config';
 import { usePadBalance } from '@/hooks/usePadBalance';
 import { useStakingPositions } from '@/hooks/useStakingPositions';
 import { useNFTBalance } from '@/hooks/useNFTBalance';
@@ -21,6 +23,9 @@ export function UserProfile() {
   const [notifications, setNotifications] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(false);
+  const { writeContractAsync } = useWriteContract();
+  const [unstakeLoading, setUnstakeLoading] = useState<number | null>(null);
+  const [unstakeError, setUnstakeError] = useState<string | null>(null);
 
   const { padBalance, stakingPositions, nftBalance } = useContext(DashboardDataContext);
   const { address, chainId } = useAccount();
@@ -37,6 +42,7 @@ export function UserProfile() {
     isLoading: isLoadingNFTs,
     currentTier: nftTier = 'None',
   } = nftBalance;
+  const { nfts } = useNFTBalance();
 
   useEffect(() => {
     if (!address) return;
@@ -88,6 +94,58 @@ export function UserProfile() {
 
   // Получаем только активные позиции
   const activePositions = (positions ?? []).filter((pos: any) => pos.isActive && ((Date.now() / 1000) < (Number(pos.startTime) + Number(pos.duration))));
+
+  // Завершённые позиции (finished)
+  const finishedPositions = (positions ?? []).filter((pos: any) => {
+    const endTime = Number(pos.startTime) + Number(pos.duration);
+    return !pos.isActive || (Date.now() / 1000) >= endTime;
+  });
+
+  // Проверка: можно ли собрать NFT (например, claimableNFT === true или свойство позиции)
+  const canClaimNFT = (pos: any) => {
+    // Пример: если есть поле canClaimNFT или claimableNFT
+    return pos.canClaimNFT || pos.claimableNFT || (pos.nftClaimed === false);
+  };
+
+  const handleClaimAndUnstake = async (positionId: number) => {
+    setUnstakeLoading(positionId);
+    setUnstakeError(null);
+    try {
+      // Сначала mint NFT
+      await writeContractAsync({
+        address: STAKE_MANAGER_ADDRESS,
+        abi: STAKE_MANAGER_ABI,
+        functionName: 'mintNextNFT',
+        args: [BigInt(positionId)],
+      });
+      // Затем closePosition
+      await writeContractAsync({
+        address: STAKE_MANAGER_ADDRESS,
+        abi: STAKE_MANAGER_ABI,
+        functionName: 'closePosition',
+        args: [BigInt(positionId)],
+      });
+    } catch (e: any) {
+      setUnstakeError(e?.message || 'Ошибка при claim NFT & возврате токенов');
+    }
+    setUnstakeLoading(null);
+  };
+
+  const handleUnstake = async (positionId: number) => {
+    setUnstakeLoading(positionId);
+    setUnstakeError(null);
+    try {
+      await writeContractAsync({
+        address: STAKE_MANAGER_ADDRESS,
+        abi: STAKE_MANAGER_ABI,
+        functionName: 'closePosition',
+        args: [BigInt(positionId)],
+      });
+    } catch (e: any) {
+      setUnstakeError(e?.message || 'Ошибка при возврате токенов');
+    }
+    setUnstakeLoading(null);
+  };
 
   // Helper to get tier key by name
   const getTierKeyByName = (name: string): number | undefined => {
@@ -201,6 +259,53 @@ export function UserProfile() {
               </span>
             </div>
           </div>
+        </CardContent>
+      </Card>
+      <Card className="bg-gray-900/50 border-gray-800">
+        <CardContent className="p-6">
+          <h4 className="font-semibold text-white mb-4">Завершённые позиции</h4>
+          {finishedPositions.length === 0 ? (
+            <div className="text-gray-400">Нет завершённых позиций</div>
+          ) : (
+            <div className="space-y-4">
+              {finishedPositions.map((pos: any) => {
+                const nftsForPosition = nfts.filter((nft: any) => Number(nft.positionId) === Number(pos.id));
+                return (
+                  <div key={pos.id} className="flex flex-col md:flex-row md:items-center md:justify-between bg-gray-800/40 rounded-xl p-4">
+                    <div>
+                      <div className="font-semibold text-white">Позиция #{pos.id}</div>
+                      <div className="text-gray-400 text-sm">Сумма: {pos.formattedAmount} PADD-R</div>
+                      <div className="text-gray-400 text-sm">Тир: {pos.tierInfo?.name || '—'}</div>
+                      <div className="text-gray-400 text-sm">Период: {pos.formattedStartDate} — {pos.formattedEndDate}</div>
+                      <div className="text-purple-400 text-sm mt-1">NFTs: {nftsForPosition.length}</div>
+                    </div>
+                    <div className="mt-2 md:mt-0 flex flex-col items-end">
+                      {canClaimNFT(pos) ? (
+                        <Button
+                          onClick={() => handleClaimAndUnstake(pos.id)}
+                          disabled={unstakeLoading === pos.id}
+                          className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold"
+                        >
+                          {unstakeLoading === pos.id ? 'Выполняется...' : 'Claim NFT & Unstake'}
+                        </Button>
+                      ) : (
+                        <Button
+                          onClick={() => handleUnstake(pos.id)}
+                          disabled={unstakeLoading === pos.id}
+                          className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold"
+                        >
+                          {unstakeLoading === pos.id ? 'Возврат...' : 'Вернуть токены'}
+                        </Button>
+                      )}
+                      {unstakeError && (
+                        <div className="text-red-500 text-xs mt-1">{unstakeError}</div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>

@@ -43,6 +43,7 @@ export function StakingForm() {
   const [showDecimalsDialog, setShowDecimalsDialog] = useState(false);
   const [userNFTImages, setUserNFTImages] = useState<Record<string, string>>({}); // tokenId -> image
   const [nftImages, setNftImages] = useState<Record<number, string>>({}); // tokenId -> image_name
+  const [stakeError, setStakeError] = useState<string | null>(null);
 
   const { toast } = useToast();
   const { address, chainId } = useAccount();
@@ -174,7 +175,12 @@ export function StakingForm() {
           }
         }
         // --- конец блока ---
-      } catch (err) {
+      } catch (err: any) {
+        if (typeof err?.message === 'string' && err.message.includes('Too many positions')) {
+          toast({ title: 'Лимит позиций', description: 'Можно иметь не более 10 активных позиций. Закройте одну из существующих, чтобы создать новую.' });
+          setIsStaking(false);
+          return;
+        }
         if (typeof window !== 'undefined') {
           console.error('createPosition error:', err);
         }
@@ -253,6 +259,19 @@ export function StakingForm() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [nfts, address]);
 
+  // Проверка баланса
+  const maxStake = balance ? Number(formatTokenAmount(balance)) : 0;
+  const isStakeTooMuch = stakeAmount && Number(stakeAmount) > maxStake;
+  const isStakeInvalid = !stakeAmount || isNaN(Number(stakeAmount)) || Number(stakeAmount) <= 0 || isStakeTooMuch;
+
+  useEffect(() => {
+    if (isStakeTooMuch) {
+      setStakeError('Недостаточно средств на балансе');
+    } else {
+      setStakeError(null);
+    }
+  }, [stakeAmount, maxStake]);
+
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
       {/* Staking Form */}
@@ -282,6 +301,7 @@ export function StakingForm() {
               ) : (
                 <p className="text-sm text-gray-400 mt-1">Available: {availableBalance} PADD-R</p>
               )}
+              {stakeError && <div className="text-red-500 text-xs mt-1">{stakeError}</div>}
             </div>
 
             <div>
@@ -409,13 +429,14 @@ export function StakingForm() {
             ) : currentPositions.length > 0 ? (
               currentPositions.map((position, index) => {
                 const safePosition = position as NonNullable<typeof position>;
-                const nftsForPosition = nfts.filter(nft => nft.positionId === safePosition.id);
+                const nftsForPosition = nfts.filter(nft => Number(nft.positionId) === Number(safePosition.id));
                 const nftImage = nftsForPosition[0] ? nftImages[nftsForPosition[0].tokenId] : undefined;
                 const progress = Math.min(100, ((now - Number(safePosition.startTime)) / Number(safePosition.duration)) * 100);
                 const maxRewards = Math.floor(Number(safePosition.duration) / 1800); // 30 минут = 1800 секунд
                 const claimedRewards = nftsForPosition.length;
                 const unclaimedRewards = Math.max(0, maxRewards - claimedRewards);
                 const canClaim = unclaimedRewards > 0 && Number(safePosition.nextMintAt) < now;
+                const displayClaimedRewards = claimedRewards + (canClaim ? 1 : 0);
                 return (
                   <div key={index} className="p-4 rounded-2xl bg-gray-800/50 space-y-3">
                     <div className="flex items-center justify-between">
@@ -458,10 +479,7 @@ export function StakingForm() {
                       <div className="flex items-center space-x-2">
                         <Trophy size={14} className="text-emerald-400" />
                         <span className="text-emerald-400 font-bold">
-                          Rewards: {claimedRewards} / {maxRewards}
-                          {unclaimedRewards > 0 && (
-                            <span className="ml-2 text-yellow-400">(+{unclaimedRewards} unclaimed)</span>
-                          )}
+                          Rewards: {displayClaimedRewards} / {maxRewards}
                         </span>
                       </div>
                     </div>
@@ -522,9 +540,17 @@ export function StakingForm() {
               {pastPositions && pastPositions.length > 0 ? (
                 pastPositions.map((position, idx) => {
                   const safePosition = position as NonNullable<typeof position>;
-                  const nftsForPosition = nfts.filter(nft => nft.positionId === safePosition.id);
+                  const nftsForPosition = nfts.filter(nft => Number(nft.positionId) === Number(safePosition.id));
                   const progress = Math.min(100, ((now - Number(safePosition.startTime)) / Number(safePosition.duration)) * 100);
                   const rewardsCount = nftsForPosition.length;
+                  const maxRewards = Math.floor(Number(safePosition.duration) / 1800); // 30 минут = 1800 секунд
+                  // Определяем, можно ли забрать NFT (по таймеру)
+                  const unclaimedRewards = Math.max(0, maxRewards - rewardsCount);
+                  const canClaim = unclaimedRewards > 0 && Number(safePosition.nextMintAt) < now;
+                  // Для отображения: если можно забрать NFT, увеличиваем rewardsCount на 1
+                  const displayRewardsCount = rewardsCount + (canClaim ? 1 : 0);
+                  const canUnstake = safePosition.isActive && safePosition.isMature && rewardsCount === maxRewards;
+                  const canClaimAndUnstake = safePosition.isActive && safePosition.isMature && rewardsCount < maxRewards;
                   return (
                     <div key={idx} className="p-4 rounded-2xl bg-gray-800/50 space-y-3">
                       <div className="flex items-center justify-between">
@@ -550,13 +576,57 @@ export function StakingForm() {
                         </div>
                         <div className="flex items-center space-x-2">
                           <Trophy size={14} className="text-emerald-400" />
-                          <span className="text-emerald-400 font-bold">Rewards: {rewardsCount}</span>
+                          <span className="text-emerald-400 font-bold">Rewards: {displayRewardsCount} / {maxRewards}</span>
                         </div>
                       </div>
                       {/* Кнопка Claim NFT & Unstake если есть несобранные NFT */}
-                      {safePosition.monthIndex > 0 && safePosition.isMature && safePosition.isActive && (
-                        <Button className="mt-2 bg-emerald-600 hover:bg-emerald-700 w-full">
+                      {canClaimAndUnstake && (
+                        <Button className="mt-2 bg-emerald-600 hover:bg-emerald-700 w-full"
+                          onClick={async () => {
+                            try {
+                              // Сначала claim NFT
+                              await writeContractAsync({
+                                address: STAKE_MANAGER_ADDRESS,
+                                abi: STAKE_MANAGER_ABI,
+                                functionName: 'mintNextNFT',
+                                args: [BigInt(safePosition.id)],
+                              });
+                              // Затем unstake
+                              await writeContractAsync({
+                                address: STAKE_MANAGER_ADDRESS,
+                                abi: STAKE_MANAGER_ABI,
+                                functionName: 'closePosition',
+                                args: [BigInt(safePosition.id)],
+                              });
+                              toast({ title: 'Unstaked!', description: 'Позиция успешно закрыта и NFT собран.' });
+                              await refetchPositions();
+                            } catch (e: any) {
+                              toast({ title: 'Ошибка', description: e?.message || 'Ошибка Claim NFT & Unstake' });
+                            }
+                          }}
+                        >
                           Claim NFT & Unstake
+                        </Button>
+                      )}
+                      {/* Кнопка Unstake если все NFT уже собраны */}
+                      {canUnstake && (
+                        <Button className="mt-2 bg-emerald-600 hover:bg-emerald-700 w-full"
+                          onClick={async () => {
+                            try {
+                              await writeContractAsync({
+                                address: STAKE_MANAGER_ADDRESS,
+                                abi: STAKE_MANAGER_ABI,
+                                functionName: 'closePosition',
+                                args: [BigInt(safePosition.id)],
+                              });
+                              toast({ title: 'Unstaked!', description: 'Позиция успешно закрыта.' });
+                              await refetchPositions();
+                            } catch (e: any) {
+                              toast({ title: 'Ошибка', description: e?.message || 'Ошибка Unstake' });
+                            }
+                          }}
+                        >
+                          Unstake
                         </Button>
                       )}
                       {/* Шторка с историей */}

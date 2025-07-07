@@ -83,7 +83,7 @@ export function useStakingPositions() {
 
   // Разделяем активные и завершённые позиции
   const activePositionsArr = positions.filter(pos => pos.isActive);
-  const pastPositions = positions.filter(pos => !pos.isActive || pos.isMature);
+  const pastPositions = positions.filter(pos => !pos.isActive);
 
   // Рассчитываем общую статистику
   const totalStaked = positions.reduce((sum, pos) => sum + Number(pos ? pos.formattedAmount : 0), 0);
