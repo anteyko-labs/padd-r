@@ -166,47 +166,39 @@ export function RewardsPanel() {
   return (
     <div className="space-y-8">
       {/* Фильтр по статусу */}
-      <div className="flex gap-2 mb-4">
-        <Button
-          variant="ghost"
-          size="sm"
-          className={`transition-colors rounded-full px-4 py-2 font-semibold border-2
-            ${filter === 'active' ? 'bg-emerald-600 text-white border-emerald-600 shadow-lg' : 'bg-transparent border-emerald-800 text-emerald-400 hover:bg-emerald-900/20'}
-          `}
-          onClick={() => setFilter('active')}
-        >
-          Актуальные
-        </Button>
-        <Button
-          variant="ghost"
-          size="sm"
-          className={`transition-colors rounded-full px-4 py-2 font-semibold border-2
-            ${filter === 'expired' ? 'bg-yellow-600 text-white border-yellow-600 shadow-lg' : 'bg-transparent border-yellow-800 text-yellow-400 hover:bg-yellow-900/20'}
-          `}
-          onClick={() => setFilter('expired')}
-        >
-          Истёк срок
-        </Button>
-        <Button
-          variant="ghost"
-          size="sm"
-          className={`transition-colors rounded-full px-4 py-2 font-semibold border-2
-            ${filter === 'used' ? 'bg-gray-600 text-white border-gray-600 shadow-lg' : 'bg-transparent border-gray-800 text-gray-400 hover:bg-gray-900/20'}
-          `}
-          onClick={() => setFilter('used')}
-        >
-          Использованы
-        </Button>
-        <Button
-          variant="ghost"
-          size="sm"
-          className={`transition-colors rounded-full px-4 py-2 font-semibold border-2
-            ${filter === 'transferred' ? 'bg-purple-600 text-white border-purple-600 shadow-lg' : 'bg-transparent border-purple-800 text-purple-400 hover:bg-purple-900/20'}
-          `}
-          onClick={() => setFilter('transferred')}
-        >
-          Переданы
-        </Button>
+      <div className="overflow-x-auto mb-4">
+        <div className="flex gap-2 flex-nowrap w-max min-w-full">
+          <Button
+            variant="ghost"
+            size="sm"
+            className={`transition-colors rounded-full px-4 py-2 font-semibold border-2
+              ${filter === 'active' ? 'bg-emerald-600 text-white border-emerald-600 shadow-lg' : 'bg-transparent border-emerald-800 text-emerald-400 hover:bg-emerald-900/20'}
+            `}
+            onClick={() => setFilter('active')}
+          >
+            Актуальные
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            className={`transition-colors rounded-full px-4 py-2 font-semibold border-2
+              ${filter === 'used' ? 'bg-gray-600 text-white border-gray-600 shadow-lg' : 'bg-transparent border-gray-800 text-gray-400 hover:bg-gray-900/20'}
+            `}
+            onClick={() => setFilter('used')}
+          >
+            Использованы
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            className={`transition-colors rounded-full px-4 py-2 font-semibold border-2
+              ${filter === 'transferred' ? 'bg-purple-600 text-white border-purple-600 shadow-lg' : 'bg-transparent border-purple-800 text-purple-400 hover:bg-purple-900/20'}
+            `}
+            onClick={() => setFilter('transferred')}
+          >
+            Переданы
+          </Button>
+        </div>
       </div>
       {/* NFT Rewards */}
       <div>

@@ -4,6 +4,27 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ExternalLink, Eye, TrendingUp } from 'lucide-react';
+import { useWallet } from '@/hooks/use-wallet';
+import { useConnectModal } from '@rainbow-me/rainbowkit';
+import { useRouter } from 'next/navigation';
+
+function TradeButton({ children, className }: { children: React.ReactNode, className?: string }) {
+  const { isConnected } = useWallet();
+  const { openConnectModal } = useConnectModal();
+  const router = useRouter();
+  const handleClick = () => {
+    if (isConnected) {
+      router.push('/dashboard/rewards');
+    } else if (openConnectModal) {
+      openConnectModal();
+    }
+  };
+  return (
+    <Button onClick={handleClick} className={className} size="sm">
+      {children}
+    </Button>
+  );
+}
 
 export function NFTMarketplace() {
   const nfts = [
@@ -105,13 +126,10 @@ export function NFTMarketplace() {
                     View Details
                   </Button>
                   {nft.tradeable && (
-                    <Button 
-                      size="sm" 
-                      className="flex-1 bg-emerald-600 hover:bg-emerald-700"
-                    >
+                    <TradeButton className="flex-1 bg-emerald-600 hover:bg-emerald-700">
                       <ExternalLink size={16} className="mr-1" />
                       Trade
-                    </Button>
+                    </TradeButton>
                   )}
                 </div>
               </CardContent>

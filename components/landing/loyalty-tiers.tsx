@@ -4,6 +4,27 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Crown, Star, Gem, Zap } from 'lucide-react';
+import { useWallet } from '@/hooks/use-wallet';
+import { useConnectModal } from '@rainbow-me/rainbowkit';
+import { useRouter } from 'next/navigation';
+
+function StakingButton({ children, className }: { children: React.ReactNode, className?: string }) {
+  const { isConnected } = useWallet();
+  const { openConnectModal } = useConnectModal();
+  const router = useRouter();
+  const handleClick = () => {
+    if (isConnected) {
+      router.push('/dashboard/stake');
+    } else if (openConnectModal) {
+      openConnectModal();
+    }
+  };
+  return (
+    <Button onClick={handleClick} className={className} variant="outline">
+      {children}
+    </Button>
+  );
+}
 
 export function LoyaltyTiers() {
   const tiers = [
@@ -45,7 +66,7 @@ export function LoyaltyTiers() {
       duration: '2.5+ years',
       dayRange: '912+ days',
       discount: '12%',
-      perks: ['Track days', 'Personal manager', 'All benefits'],
+      perks: ['Track days', 'Personal manager'],
       nft: 'Platinum NFT',
       color: 'from-emerald-400 to-emerald-600',
       icon: Gem,
@@ -70,7 +91,7 @@ export function LoyaltyTiers() {
               className={`relative bg-gradient-to-br ${tier.color} border-0 text-white card-hover ${tier.popular ? 'ring-2 ring-emerald-400' : ''}`}
             >
               {tier.popular && (
-                <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
+                <div className="absolute top-3 right-3">
                   <Badge className="bg-emerald-600 text-white px-4 py-1">Most Popular</Badge>
                 </div>
               )}
@@ -110,12 +131,9 @@ export function LoyaltyTiers() {
                   <div className="font-semibold text-yellow-300">{tier.nft}</div>
                 </div>
                 
-                <Button 
-                  className="w-full bg-white/20 hover:bg-white/30 text-white border-0 font-semibold"
-                  variant="outline"
-                >
+                <StakingButton className="w-full bg-white/20 hover:bg-white/30 text-white border-0 font-semibold">
                   Start Staking
-                </Button>
+                </StakingButton>
               </CardContent>
             </Card>
           ))}
