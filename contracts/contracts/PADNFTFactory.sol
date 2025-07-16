@@ -31,8 +31,12 @@ contract PADNFTFactory is ERC721A, AccessControl {
 
     mapping(uint256 => NFTMetadata) public nftMetadata;
 
+    // Храним image URI для каждого тира
+    mapping(uint8 => string) public tierImageURIs;
+
     event BaseURISet(string newBaseURI);
     event NFTMinted(address indexed to, uint256 indexed tokenId, NFTMetadata meta); // Фронт может слушать это событие для отображения новых NFT
+    event TierImageURISet(uint8 indexed tier, string uri);
 
     constructor(address _stakeManager, address _tierCalculator) ERC721A("PAD NFT (v2)", "PADNFTv2") {
         _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
@@ -72,6 +76,12 @@ contract PADNFTFactory is ERC721A, AccessControl {
         return tokenId;
     }
 
+    function setTierImage(uint8 tier, string calldata uri) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        require(tier < 4, "Invalid tier");
+        tierImageURIs[tier] = uri;
+        emit TierImageURISet(tier, uri);
+    }
+
     // Soul-bound: Bronze/Silver (tier 0/1) нельзя переводить, Gold/Platinum (tier 2/3) можно
     function _beforeTokenTransfers(address from, address to, uint256 startTokenId, uint256 quantity) internal override {
         if (from != address(0) && to != address(0)) {
@@ -89,8 +99,54 @@ contract PADNFTFactory is ERC721A, AccessControl {
 
     function tokenURI(uint256 tokenId) public view override returns (string memory) {
         require(_exists(tokenId), "ERC721Metadata: URI query for nonexistent token");
-        string memory base = _baseURI();
-        return bytes(base).length > 0 ? string(abi.encodePacked(base, tokenId.toString(), ".json")) : "";
+        NFTMetadata memory meta = nftMetadata[tokenId];
+        string memory imagePath = tierImageURIs[meta.tierLevel];
+        if (bytes(imagePath).length == 0) {
+            imagePath = "unknown.png";
+        }
+        string memory json = string(abi.encodePacked(
+            '{',
+                '"name":"PAD NFT Tier ', Strings.toString(meta.tierLevel), '",',
+                '"description":"PAD NFT with tier utility.",',
+                '"image":"', imagePath, '"',
+            '}'
+        ));
+        string memory encoded = _base64(bytes(json));
+        return string(abi.encodePacked("data:application/json;base64,", encoded));
+    }
+
+    // Вспомогательная функция для base64
+    function _base64(bytes memory data) internal pure returns (string memory) {
+        string memory TABLE = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+        uint256 len = data.length;
+        if (len == 0) return "";
+        // base64 size
+        uint256 encodedLen = 4 * ((len + 2) / 3);
+        string memory result = new string(encodedLen + 32);
+        assembly {
+            mstore(result, encodedLen)
+            let tablePtr := add(TABLE, 1)
+            let dataPtr := data
+            let endPtr := add(dataPtr, len)
+            let resultPtr := add(result, 32)
+            for {} lt(dataPtr, endPtr) {}
+            {
+                dataPtr := add(dataPtr, 3)
+                let input := mload(dataPtr)
+                mstore8(resultPtr, mload(add(tablePtr, and(shr(18, input), 0x3F))))
+                resultPtr := add(resultPtr, 1)
+                mstore8(resultPtr, mload(add(tablePtr, and(shr(12, input), 0x3F))))
+                resultPtr := add(resultPtr, 1)
+                mstore8(resultPtr, mload(add(tablePtr, and(shr(6, input), 0x3F))))
+                resultPtr := add(resultPtr, 1)
+                mstore8(resultPtr, mload(add(tablePtr, and(input, 0x3F))))
+                resultPtr := add(resultPtr, 1)
+            }
+            switch mod(len, 3)
+            case 1 { mstore(sub(resultPtr, 2), shl(240, 0x3d3d)) }
+            case 2 { mstore(sub(resultPtr, 1), shl(248, 0x3d)) }
+        }
+        return result;
     }
 
     function supportsInterface(bytes4 interfaceId) public view override(ERC721A, AccessControl) returns (bool) {

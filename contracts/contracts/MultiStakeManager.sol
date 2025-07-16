@@ -30,8 +30,13 @@ contract MultiStakeManager is AccessControl, ReentrancyGuard {
     bytes32 public constant ADMIN_ROLE = keccak256("ADMIN_ROLE");
     
     IERC20 public immutable stakingToken;
-    uint256 public constant MIN_STAKE_DURATION = 1 hours; // 1 час
-    uint256 public constant MAX_STAKE_DURATION = 10 hours; // 10 часов
+    // Минимальные суммы для каждого тира
+    uint256 public constant MIN_BRONZE = 1000;
+    uint256 public constant MIN_SILVER = 3000;
+    uint256 public constant MIN_GOLD = 5000;
+    uint256 public constant MIN_PLATINUM = 10000;
+    uint256 public constant MIN_STAKE_MONTHS = 3;
+    uint256 public constant MAX_STAKE_MONTHS = 12;
     uint256 public constant MAX_POSITIONS_PER_WALLET = 10;
     uint256 public constant REWARD_INTERVAL = 30 minutes; // 30 минут
 
@@ -67,58 +72,53 @@ contract MultiStakeManager is AccessControl, ReentrancyGuard {
         _grantRole(ADMIN_ROLE, msg.sender);
     }
 
-    function createPosition(uint256 amount, uint256 duration) external nonReentrant {
+    function createPosition(uint256 amount, uint256 months) external nonReentrant {
         require(amount > 0, "Zero amount");
-        require(duration >= MIN_STAKE_DURATION, "Duration too short");
-        require(duration <= MAX_STAKE_DURATION, "Duration too long");
+        require(months >= MIN_STAKE_MONTHS, "Stake too short");
+        require(months <= MAX_STAKE_MONTHS, "Stake too long");
         require(userPositions[msg.sender].length < MAX_POSITIONS_PER_WALLET, "Too many positions");
         require(amount <= type(uint128).max, "Amount too large");
 
-        uint256 positionId = _nextPositionId++;
-        uint256 startTime = block.timestamp;
-
-        // Calculate tier based on duration
-        uint256 tier;
-        if (duration >= 9 hours) { // 9-10 часов
+        // Определяем тир по сроку и сумме
+        uint8 tier;
+        if (months >= 12 && amount >= MIN_PLATINUM) {
             tier = 3; // Platinum
-        } else if (duration >= 7 hours) { // 7-9 часов
+        } else if (months >= 9 && amount >= MIN_GOLD) {
             tier = 2; // Gold
-        } else if (duration >= 4 hours) { // 4-7 часов
+        } else if (months >= 6 && amount >= MIN_SILVER) {
             tier = 1; // Silver
-        } else {
+        } else if (months >= 3 && amount >= MIN_BRONZE) {
             tier = 0; // Bronze
+        } else {
+            revert("Not enough amount or months for any tier");
         }
 
-        uint256 numMints = duration / REWARD_INTERVAL;
-        uint256 interval = REWARD_INTERVAL;
+        uint256 positionId = _nextPositionId++;
+        uint256 startTime = block.timestamp;
+        uint256 duration = months * 30 days;
         positions[positionId] = Position({
             amount: uint128(amount),
             startTime: uint64(startTime),
             duration: uint32(duration),
-            nextMintAt: uint32(startTime + interval),
+            nextMintAt: uint32(startTime + duration),
             tier: uint8(tier),
             monthIndex: 0,
             isActive: true,
             owner: msg.sender
         });
-
         userPositions[msg.sender].push(positionId);
         positionIndexInUserArray[positionId] = userPositions[msg.sender].length - 1;
-
         require(stakingToken.transferFrom(msg.sender, address(this), amount), "Transfer failed");
-
         emit PositionCreated(positionId, msg.sender, amount, duration);
-
-        // Mint NFT if factory is set
         if (nftFactory != address(0)) {
             IPADNFTFactory(nftFactory).mintNFT(
                 msg.sender,
                 positionId,
                 amount,
-                duration / 1 hours, // lockDurationHours
+                months,
                 startTime,
                 0,
-                startTime + interval
+                startTime + duration
             );
         }
     }
@@ -130,14 +130,14 @@ contract MultiStakeManager is AccessControl, ReentrancyGuard {
         require(block.timestamp >= position.startTime + position.duration, "Position not mature");
 
         uint256 amount = position.amount;
-        uint256 reward = calculateRewards(positionId);
+        // Удаляю функцию calculateRewards и все упоминания о наградах/процентах
         position.isActive = false;
 
         removePositionFromUser(positionId);
 
-        require(stakingToken.transfer(msg.sender, amount + reward), "Transfer failed");
+        require(stakingToken.transfer(msg.sender, amount), "Transfer failed");
 
-        emit PositionClosed(positionId, msg.sender, amount, reward);
+        emit PositionClosed(positionId, msg.sender, amount, 0); // Removed reward from event
     }
 
     function emergencyWithdraw(uint256 positionId) external nonReentrant {
@@ -160,14 +160,7 @@ contract MultiStakeManager is AccessControl, ReentrancyGuard {
         return userPositions[user];
     }
 
-    function calculateRewards(uint256 positionId) public view returns (uint256) {
-        Position storage position = positions[positionId];
-        require(position.isActive, "Position not active");
-        
-        // Calculate rewards based on tier and monthIndex
-        uint256 baseReward = position.amount * position.tier / 100; // 1% per tier
-        return baseReward * position.monthIndex;
-    }
+    // Удаляю функцию calculateRewards и все упоминания о наградах/процентах
 
     function removePositionFromUser(uint256 positionId) internal {
         Position storage position = positions[positionId];

@@ -51,12 +51,10 @@
     "clsx": "^2.1.1",
     "cmdk": "^1.0.0",
     "date-fns": "^3.6.0",
-    "dotenv": "^16.6.1",
     "embla-carousel-react": "^8.3.0",
     "encoding": "^0.1.13",
     "eslint": "8.49.0",
     "eslint-config-next": "13.5.1",
-    "ethers": "^6.15.0",
     "framer-motion": "^11.0.0",
     "input-otp": "^1.2.4",
     "lucide-react": "^0.446.0",
@@ -83,7 +81,11 @@
     "zod": "^3.23.8"
   },
   "devDependencies": {
-    "@types/google-fonts": "^1.0.0"
+    "@nomiclabs/hardhat-ethers": "^2.2.3",
+    "@types/google-fonts": "^1.0.0",
+    "dotenv": "^17.2.0",
+    "ethers": "^5.8.0",
+    "hardhat": "^2.25.0"
   },
   "description": "A comprehensive blockchain-based loyalty platform with NFT rewards, staking mechanisms, and tier-based benefits.",
   "main": "next.config.js",
