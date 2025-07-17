@@ -4,13 +4,17 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Crown, Star, Gem, Zap } from 'lucide-react';
+import { useWallet } from '@/hooks/use-wallet';
+import { useRouter } from 'next/navigation';
 
 export function LoyaltyTiers() {
+  const { isConnected, connectWallet, connectors } = useWallet();
+  const router = useRouter();
   const tiers = [
     {
       name: 'Bronze',
-      duration: '6 months - 1 year',
-      dayRange: '180-365 days',
+      duration: '3 months',
+      minAmount: '1000+',
       discount: '5%',
       perks: ['Free delivery', 'Basic support'],
       nft: 'Bronze NFT',
@@ -20,8 +24,8 @@ export function LoyaltyTiers() {
     },
     {
       name: 'Silver',
-      duration: '1 - 1.5 years',
-      dayRange: '365-547 days',
+      duration: '6 months',
+      minAmount: '1000+',
       discount: '7%',
       perks: ['Car upgrades 2x/year', 'Priority booking'],
       nft: 'Silver NFT',
@@ -31,8 +35,8 @@ export function LoyaltyTiers() {
     },
     {
       name: 'Gold',
-      duration: '1.5 - 2.5 years',
-      dayRange: '547-912 days',
+      duration: '9 months',
+      minAmount: '1000+',
       discount: '10%',
       perks: ['VIP restaurant access', 'Premium rentals'],
       nft: 'Gold NFT',
@@ -42,16 +46,24 @@ export function LoyaltyTiers() {
     },
     {
       name: 'Platinum',
-      duration: '2.5+ years',
-      dayRange: '912+ days',
+      duration: '12 months',
+      minAmount: '1000+',
       discount: '12%',
-      perks: ['Track days', 'Personal manager', 'All benefits'],
+      perks: [],
       nft: 'Platinum NFT',
-      color: 'from-emerald-400 to-emerald-600',
+      color: 'from-emerald-500 to-emerald-800',
       icon: Gem,
       popular: false,
     },
   ];
+
+  const handleStartStaking = async (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault();
+    if (!isConnected) {
+      await connectWallet(connectors[0]?.id);
+    }
+    router.push('/dashboard/stake');
+  };
 
   return (
     <section id="tiers" className="py-16 px-4 sm:px-6 lg:px-8 bg-gray-950/50">
@@ -85,8 +97,9 @@ export function LoyaltyTiers() {
               
               <CardContent className="space-y-4">
                 <div className="text-center">
-                  <div className="text-2xl font-bold mb-1">{tier.dayRange}</div>
+                  <div className="text-2xl font-bold mb-1">{tier.duration}</div>
                   <div className="text-sm opacity-90">Staking Period</div>
+                  <div className="text-xs text-gray-200 mt-1">Min. {tier.minAmount} PAD</div>
                 </div>
                 
                 <div className="text-center">
@@ -113,6 +126,7 @@ export function LoyaltyTiers() {
                 <Button 
                   className="w-full bg-white/20 hover:bg-white/30 text-white border-0 font-semibold"
                   variant="outline"
+                  onClick={handleStartStaking}
                 >
                   Start Staking
                 </Button>
