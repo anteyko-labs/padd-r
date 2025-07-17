@@ -28,6 +28,13 @@ const tierFolders: Record<string, string> = {
   Platinum: 'tier4',
 };
 
+const tierImages: Record<string, string> = {
+  Bronze: "https://xmnvjrtznshxsbrkohhv.supabase.co/storage/v1/object/sign/assets/tier1_01.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV80ZmVlZmUwOC05ODZiLTQ2ZTgtOWM1NC1iZmYyNDkxOTcwNDEiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJhc3NldHMvdGllcjFfMDEucG5nIiwiaWF0IjoxNzUyNzQxNTc4LCJleHAiOjQyNzU2MjE1Nzh9.kMXZn6i-WPjX6qaRmlh4tif7PXBecZQm5DPmEIpIt7E",
+  Silver: "https://xmnvjrtznshxsbrkohhv.supabase.co/storage/v1/object/sign/assets/tier2_01.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV80ZmVlZmUwOC05ODZiLTQ2ZTgtOWM1NC1iZmYyNDkxOTcwNDEiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJhc3NldHMvdGllcjJfMDEucG5nIiwiaWF0IjoxNzUyNzQxNTk3LCJleHAiOjE5NjAxMDE1OTd9.ajuNtgQyXSRuUt8MSF_qQiai7EQhZ62Zb5mSOnrv0sw",
+  Gold: "https://xmnvjrtznshxsbrkohhv.supabase.co/storage/v1/object/sign/assets/tier3_01.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV80ZmVlZmUwOC05ODZiLTQ2ZTgtOWM1NC1iZmYyNDkxOTcwNDEiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJhc3NldHMvdGllcjNfMDEucG5nIiwiaWF0IjoxNzUyNzQxNjA2LCJleHAiOjE3ODQyNzc2MDZ9.5jvtVS-7TMVtxSmbWbWfLcu41zXtKGvR61TWijycHSI",
+  Platinum: "https://xmnvjrtznshxsbrkohhv.supabase.co/storage/v1/object/sign/assets/tier4_01.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV80ZmVlZmUwOC05ODZiLTQ2ZTgtOWM1NC1iZmYyNDkxOTcwNDEiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJhc3NldHMvdGllcjRfMDEucG5nIiwiaWF0IjoxNzUyNzQxNjE1LCJleHAiOjE3ODQyNzc2MTV9.6nV-Fhh2I4cwoC9I8evbCAC0DalHauhNrb3_37zkRFE"
+};
+
 // Безопасный перевод строки в wei (bigint)
 function parseUnits(amount: string, decimals: number = 18): bigint {
   const [whole, fraction = ''] = amount.split('.');
@@ -35,9 +42,21 @@ function parseUnits(amount: string, decimals: number = 18): bigint {
   return BigInt(whole + normalizedFraction);
 }
 
+// --- Новая функция для расчета тира ---
+function calculateTier(months: number, amount: number): string {
+  if (![3, 6, 9, 12].includes(months) || amount < 1000) return 'None';
+  const monthsNorm = months / 12;
+  const amountNorm = amount / 10000;
+  const tierScore = 0.65 * monthsNorm + 0.35 * amountNorm;
+  if (tierScore <= 0.2) return 'Bronze';
+  if (tierScore <= 0.45) return 'Silver';
+  if (tierScore <= 0.75) return 'Gold';
+  return 'Platinum';
+}
+
 export function StakingForm() {
+  const [stakeMonths, setStakeMonths] = useState(3);
   const [stakeAmount, setStakeAmount] = useState('');
-  const [stakeDuration, setStakeDuration] = useState('365');
   const [isApproving, setIsApproving] = useState(false);
   const [isStaking, setIsStaking] = useState(false);
   const [showDecimalsDialog, setShowDecimalsDialog] = useState(false);
@@ -48,7 +67,7 @@ export function StakingForm() {
   const { address, chainId } = useAccount();
   const { balance, isLoading: isLoadingBalance, refetch: refetchBalance } = usePadBalance();
   const { positions, isLoading: isLoadingPositions, totalStaked, totalRewards, refetch: refetchPositions } = useStakingPositions();
-  const { nfts, isLoading: isLoadingNFTs, totalNFTs } = useNFTBalance();
+  const { nfts, isLoading: isLoadingNFTs, totalNFTs, refetch: refetchNFTs } = useNFTBalance();
 
   const padTokenAddress = PAD_TOKEN_ADDRESS;
   const stakeManagerAddress = STAKE_MANAGER_ADDRESS;
@@ -65,28 +84,23 @@ export function StakingForm() {
   const { writeContractAsync } = useWriteContract();
   const { writeContractAsync: writeNFTContract } = useWriteContract();
 
-  const stakingOptions = [
-    { duration: '1', tier: 'Bronze', period: '1 hour', discount: '5%', nft: 'Bronze NFT' },
-    { duration: '4', tier: 'Silver', period: '4 hours', discount: '7%', nft: 'Silver NFT' },
-    { duration: '7', tier: 'Gold', period: '7 hours', discount: '10%', nft: 'Gold NFT' },
-    { duration: '9', tier: 'Platinum', period: '9 hours', discount: '12%', nft: 'Platinum NFT' },
-    { duration: '10', tier: 'Platinum', period: '10 hours', discount: '12%', nft: 'Platinum NFT' },
-  ];
+  // --- stakingOptions больше не нужен, убираем его ---
 
   // Получить и сохранить картинку для NFT после стейкинга
-  const assignNFTImage = async (address: string, tier: string) => {
+  const assignNFTImage = async (address: string, tier: string, tokenId: string | number) => {
     try {
       // 1. Получить неиспользованную картинку
-      const res = await axios.get(`/api/nft-image?address=${address}&tier=${tier}`);
+      const res = await axios.get(`/api/nft-image?address=${address}&tier=${tier}&token_id=${tokenId}`);
       const image = res.data.image;
       // 2. Сохранить выбранную картинку
-      await axios.post('/api/nft-image', { address, tier, image });
+      await axios.post('/api/nft-image', { address, tier, token_id: tokenId, image });
       return image;
     } catch (e) {
       return null;
     }
   };
 
+  // --- handleStake ---
   const handleStake = async () => {
     console.log('handleStake called');
     console.log('address:', address);
@@ -94,14 +108,14 @@ export function StakingForm() {
     console.log('padTokenAddress:', padTokenAddress);
     console.log('stakeManagerAddress:', stakeManagerAddress);
     console.log('writeContractAsync:', writeContractAsync);
-    console.log('Stake button clicked', { stakeAmount, stakeDuration });
+    console.log('Stake button clicked', { stakeAmount, stakeMonths });
     if (!address || !padTokenAddress || !stakeManagerAddress) {
       toast({ title: 'Wallet not connected', description: 'Connect your wallet and select network', });
       console.error('No wallet or contract address');
       return;
     }
-    if (!stakeAmount || isNaN(Number(stakeAmount)) || Number(stakeAmount) <= 0) {
-      toast({ title: 'Enter amount', description: 'Введите корректную сумму для стейкинга', });
+    if (!stakeAmount || isNaN(Number(stakeAmount)) || Number(stakeAmount) < 1000) {
+      toast({ title: 'Enter amount', description: 'Минимум 1000 токенов для стейкинга', });
       console.error('Invalid stakeAmount:', stakeAmount);
       return;
     }
@@ -112,27 +126,20 @@ export function StakingForm() {
       return;
     }
     const amount = parseUnits(stakeAmount, 18);
-    const durationHours = Number(stakeDuration);
-    const duration = BigInt(durationHours * 60 * 60); // часы -> секунды
-    if (typeof window !== 'undefined') {
-      console.log('handleStake:');
-      console.log('stakeAmount:', stakeAmount);
-      console.log('stakeDuration:', stakeDuration);
-      console.log('duration (сек):', duration.toString());
-      console.log('stakingOptions:', stakingOptions);
-      if (durationHours < 1 || durationHours > 10) {
-        console.error('Ошибка: срок должен быть от 1 до 10 часов!');
-      }
+    const months = Number(stakeMonths);
+    if (amount < 1000 * 1e18) {
+      toast({ title: 'Ошибка', description: 'Минимум 1000 токенов для стейкинга!' });
+      return;
     }
-    if (durationHours < 1 || durationHours > 10) {
-      toast({ title: 'Ошибка', description: 'Срок должен быть от 1 до 10 часов!' });
+    if (![3, 6, 9, 12].includes(months)) {
+      toast({ title: 'Ошибка', description: 'Срок только 3, 6, 9 или 12 месяцев!' });
       return;
     }
     if (typeof window !== 'undefined') {
       console.log('handleStake:');
       console.log('stakeAmount:', stakeAmount);
-      console.log('stakeDuration:', stakeDuration);
-      console.log('duration (сек):', Number(stakeDuration) * 60 * 60);
+      console.log('stakeDuration:', stakeMonths);
+      console.log('duration (сек):', months * 30 * 24 * 60 * 60);
       console.log('address:', address);
       console.log('padTokenAddress:', padTokenAddress);
       console.log('stakeManagerAddress:', stakeManagerAddress);
@@ -161,16 +168,29 @@ export function StakingForm() {
           address: stakeManagerAddress,
           abi: STAKE_MANAGER_ABI,
           functionName: 'createPosition',
-          args: [amount, duration],
+          args: [amount, months],
         });
         await refetchBalance();
         await refetchPositions();
         // --- Новый блок: получить и сохранить картинку для NFT ---
-        const tier = selectedOption?.tier;
+        const tier = calculateTier(months, Number(stakeAmount));
         if (address && tier) {
-          const image = await assignNFTImage(address, tier);
-          if (image) {
-            setUserNFTImages(prev => ({ ...prev, [`${address}_${tier}_${Date.now()}`]: image }));
+          // Ждём появления нового NFT (после createPosition)
+          let newNFT = null;
+          for (let i = 0; i < 10; i++) {
+            await new Promise(r => setTimeout(r, 1000));
+            const updatedNFTs = await refetchNFTs?.();
+            if (updatedNFTs && Array.isArray(updatedNFTs)) {
+              // Ищем NFT с нужным tier и amount
+              newNFT = updatedNFTs.find((nft: any) => nft.tierInfo?.name === tier && String(nft.formattedAmountStaked) === String(stakeAmount));
+              if (newNFT) break;
+            }
+          }
+          if (newNFT && newNFT.tokenId) {
+            const image = await assignNFTImage(address, tier, newNFT.tokenId);
+            if (image) {
+              setUserNFTImages(prev => ({ ...prev, [`${address}_${tier}_${newNFT.tokenId}`]: image }));
+            }
           }
         }
         // --- конец блока ---
@@ -196,37 +216,7 @@ export function StakingForm() {
     setIsStaking(false);
   };
 
-  const selectedOption = stakingOptions.find(option => option.duration === stakeDuration);
-
-  const getTierByDuration = (days: string) => {
-    const numDays = parseInt(days);
-    if (numDays < 180) return 'None';
-    if (numDays < 365) return 'Bronze';
-    if (numDays < 547) return 'Silver';
-    if (numDays < 912) return 'Gold';
-    return 'Platinum';
-  };
-
-  const getDiscountByDuration = (days: string) => {
-    const numDays = parseInt(days);
-    if (numDays < 180) return '0%';
-    if (numDays < 365) return '5%';
-    if (numDays < 547) return '7%';
-    if (numDays < 912) return '10%';
-    return '12%';
-  };
-
-  // Форматируем баланс
-  const formatBalance = (balance: bigint | undefined) => {
-    if (!balance) return '0';
-    return formatTokenAmount(balance);
-  };
-
-  const availableBalance = formatBalance(balance);
-
-  const now = Date.now() / 1000;
-  const currentPositions = positions.filter(pos => pos.isActive && ((now - Number(pos.startTime)) / Number(pos.duration)) * 100 < 100);
-  const pastPositions = positions.filter(pos => !pos.isActive || ((now - Number(pos.startTime)) / Number(pos.duration)) * 100 >= 100);
+  // --- Удаляю калькулятор с часами и скидками, оставляю только отображение тира ---
 
   // Автоматически назначать изображение для каждого NFT
   useEffect(() => {
@@ -253,6 +243,11 @@ export function StakingForm() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [nfts, address]);
 
+  const now = Date.now() / 1000;
+  const currentPositions = positions.filter((pos: any) => pos.isActive && ((now - Number(pos.startTime)) / Number(pos.duration)) * 100 < 100);
+  const pastPositions = positions.filter((pos: any) => !pos.isActive || ((now - Number(pos.startTime)) / Number(pos.duration)) * 100 >= 100);
+  const tierName = calculateTier(Number(stakeMonths), Number(stakeAmount));
+
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
       {/* Staking Form */}
@@ -270,130 +265,43 @@ export function StakingForm() {
               <Input
                 id="stake-amount"
                 type="number"
-                min="0.0001"
+                min="1000"
                 step="any"
-                placeholder="Enter amount"
+                placeholder="Enter amount (min 1000)"
                 value={stakeAmount}
                 onChange={(e) => setStakeAmount(e.target.value)}
                 className="bg-gray-800 border-gray-700 text-white mt-2"
               />
-              {isLoadingBalance ? (
-                <p className="text-sm text-gray-400 mt-1">Loading balance...</p>
-              ) : (
-                <p className="text-sm text-gray-400 mt-1">Available: {availableBalance} PADD-R</p>
-              )}
-            </div>
-
-            <div>
-              <Label className="text-white">Staking Duration & Tier</Label>
-              <div className="grid grid-cols-1 gap-3 mt-2">
-                {stakingOptions.map((option) => (
-                  <div
-                    key={option.duration}
-                    className={`p-4 rounded-2xl border cursor-pointer transition-all ${
-                      stakeDuration === option.duration
-                        ? 'border-emerald-500 bg-emerald-500/10'
-                        : 'border-gray-700 bg-gray-800/30 hover:border-gray-600'
-                    }`}
-                    onClick={() => setStakeDuration(option.duration)}
-                  >
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <div className="flex items-center space-x-2">
-                          <span className="font-semibold text-white">{option.period}</span>
-                          <Badge className={`${
-                            option.tier === 'Platinum' ? 'bg-emerald-600' :
-                            option.tier === 'Gold' ? 'bg-yellow-600' :
-                            option.tier === 'Silver' ? 'bg-gray-600' : 'bg-amber-600'
-                          } text-white`}>
-                            {option.tier}
-                          </Badge>
-                        </div>
-                        <p className="text-sm text-gray-400">
-                          {option.duration} hours • {option.discount} discount
-                        </p>
-                      </div>
-                      {option.nft && (
-                        <div className="text-right">
-                          <p className="text-sm text-emerald-400 font-medium">{option.nft}</p>
-                        </div>
-                      )}
-                    </div>
-                  </div>
+              <Label className="text-white mt-4">Staking Duration (months)</Label>
+              <div className="flex gap-2 mt-2">
+                {[3, 6, 9, 12].map((m) => (
+                  <Button key={m} variant={stakeMonths === m ? 'default' : 'outline'} onClick={() => setStakeMonths(m)}>{m} мес</Button>
                 ))}
               </div>
+              <div className="mt-4 flex items-center gap-2">
+                <span className="text-gray-400">Your Tier: </span>
+                <Badge className={`ml-2 ${tierName === 'Bronze' ? 'bg-amber-600' : tierName === 'Silver' ? 'bg-gray-600' : tierName === 'Gold' ? 'bg-yellow-600' : tierName === 'Platinum' ? 'bg-emerald-600' : 'bg-gray-700'} text-white text-lg px-4 py-2`}>{tierName}</Badge>
+                {tierImages[tierName] && <img src={tierImages[tierName]} alt={tierName} className="w-8 h-8 rounded" />}
+              </div>
             </div>
 
-            {selectedOption && (
-              <div className="p-4 bg-emerald-900/20 border border-emerald-800 rounded-2xl">
-                <div className="flex items-start space-x-3">
-                  <Info size={16} className="text-emerald-400 mt-0.5" />
-                  <div className="text-sm">
-                    <p className="text-emerald-400 font-medium mb-1">
-                      {selectedOption.tier} Tier Benefits
-                    </p>
-                    <p className="text-gray-300">
-                      {selectedOption.discount} discount on all services
-                      {selectedOption.nft && `, ${selectedOption.nft} reward`}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            )}
+            {/* --- Удаляю калькулятор с часами и скидками, оставляю только отображение тира --- */}
+
+            {/* --- Удаляю калькулятор с часами и скидками, оставляю только отображение тира --- */}
 
             <Button 
               onClick={handleStake}
               className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-3"
-              // disabled={!stakeAmount || parseInt(stakeAmount) < 1 || isApproving || isStaking}
+              disabled={!stakeAmount || Number(stakeAmount) < 1000 || isApproving || isStaking}
             >
               {isApproving ? 'Approving...' : isStaking ? 'Staking...' : <><Shield className="mr-2" size={20} />Stake Tokens</>}
             </Button>
           </CardContent>
         </Card>
 
-        {/* Staking Calculator */}
-        <Card className="bg-gray-900/50 border-gray-800">
-          <CardHeader>
-            <CardTitle className="flex items-center space-x-2">
-              <Calculator size={20} className="text-blue-400" />
-              <span>Staking Calculator</span>
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="p-3 bg-gray-800/30 rounded-xl text-center">
-                <p className="text-sm text-gray-400">Estimated Tier</p>
-                <p className="text-lg font-bold text-white">
-                  {stakeDuration ? getTierByDuration(stakeDuration) : 'None'}
-                </p>
-              </div>
-              <div className="p-3 bg-gray-800/30 rounded-xl text-center">
-                <p className="text-sm text-gray-400">Discount Rate</p>
-                <p className="text-lg font-bold text-emerald-400">
-                  {stakeDuration ? getDiscountByDuration(stakeDuration) : '0%'}
-                </p>
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="p-3 bg-gray-800/30 rounded-xl text-center">
-                <p className="text-sm text-gray-400">Total Staked</p>
-                <p className="text-lg font-bold text-blue-400">
-                  {isLoadingPositions ? 'Loading...' : `${totalStaked.toFixed(2)} PAD`}
-                </p>
-              </div>
-              <div className="p-3 bg-gray-800/30 rounded-xl text-center">
-                <p className="text-sm text-gray-400">Total Rewards</p>
-                <p className="text-lg font-bold text-emerald-400">
-                  {isLoadingPositions ? 'Loading...' : `${totalRewards.toFixed(2)} PAD`}
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+        {/* --- Удаляю калькулятор с часами и скидками, оставляю только отображение тира --- */}
 
-      {/* Current Stakes */}
-      <div className="space-y-6">
+        {/* Current Stakes */}
         <Card className="bg-gray-900/50 border-gray-800">
           <CardHeader>
             <CardTitle className="flex items-center space-x-2">
@@ -407,12 +315,12 @@ export function StakingForm() {
                 <p className="text-gray-400">Loading staking positions...</p>
               </div>
             ) : currentPositions.length > 0 ? (
-              currentPositions.map((position, index) => {
+              currentPositions.map((position: any, index: number) => {
                 const safePosition = position as NonNullable<typeof position>;
                 const nftsForPosition = nfts.filter(nft => nft.positionId === safePosition.id);
-                const nftImage = nftsForPosition[0] ? nftImages[nftsForPosition[0].tokenId] : undefined;
+                const nftImage = nftsForPosition[0] ? (nftsForPosition[0].image || nftImages[nftsForPosition[0].tokenId]) : undefined;
                 const progress = Math.min(100, ((now - Number(safePosition.startTime)) / Number(safePosition.duration)) * 100);
-                const maxRewards = Math.floor(Number(safePosition.duration) / 1800); // 30 минут = 1800 секунд
+                const maxRewards = Math.floor(Number(safePosition.duration) / (30 * 24 * 60 * 60)); // 1 месяц = 30*24*60*60 секунд
                 const claimedRewards = nftsForPosition.length;
                 const unclaimedRewards = Math.max(0, maxRewards - claimedRewards);
                 const canClaim = unclaimedRewards > 0 && Number(safePosition.nextMintAt) < now;
@@ -520,7 +428,7 @@ export function StakingForm() {
             </CardHeader>
             <CardContent className="space-y-4">
               {pastPositions && pastPositions.length > 0 ? (
-                pastPositions.map((position, idx) => {
+                pastPositions.map((position: any, idx: number) => {
                   const safePosition = position as NonNullable<typeof position>;
                   const nftsForPosition = nfts.filter(nft => nft.positionId === safePosition.id);
                   const progress = Math.min(100, ((now - Number(safePosition.startTime)) / Number(safePosition.duration)) * 100);
@@ -602,7 +510,7 @@ export function StakingForm() {
                       <span className="text-sm text-emerald-400 font-medium">{nftsForPosition.length} NFT</span>
                     </div>
                     {image && (
-                      <img src={`/assets/${tierFolders[nft.tierInfo?.name]}/${image}`} alt="NFT" className="w-24 h-24 object-cover rounded mb-2" />
+                      <img src={nft.image || `/assets/${tierFolders[nft.tierInfo?.name]}/${image}`} alt="NFT" className="w-24 h-24 object-cover rounded mb-2" />
                     )}
                     <div className="text-sm text-gray-300 mb-1">Staked: {nft.formattedAmountStaked} PAD</div>
                     <div className="text-sm text-gray-400 mb-1">Start: {nft.formattedStartDate}</div>

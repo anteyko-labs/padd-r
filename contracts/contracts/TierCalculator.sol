@@ -1,32 +1,19 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-// Оставляем только контракт TierCalculator
-
 contract TierCalculator {
-    enum Tier {
-        Bronze,  // ≥ 1 час
-        Silver,  // ≥ 4 часа
-        Gold,    // ≥ 7 часов
-        Platinum // ≥ 9 часов
-    }
-
-    uint256 private constant ONE_HOUR = 1 hours;
-    uint256 private constant FOUR_HOURS = 4 hours;
-    uint256 private constant SEVEN_HOURS = 7 hours;
-    uint256 private constant NINE_HOURS = 9 hours;
-
-    function getTier(uint256 duration) external pure returns (uint8) {
-        if (duration >= NINE_HOURS) {
-            return uint8(Tier.Platinum);
-        } else if (duration >= SEVEN_HOURS) {
-            return uint8(Tier.Gold);
-        } else if (duration >= FOUR_HOURS) {
-            return uint8(Tier.Silver);
-        } else if (duration >= ONE_HOUR) {
-            return uint8(Tier.Bronze);
-        } else {
-            revert("Duration too short");
-        }
+    function getTier(uint256 months, uint256 amount) external pure returns (uint8) {
+        require(months == 3 || months == 6 || months == 9 || months == 12, "Invalid months");
+        require(amount >= 1000 * 1e18, "Min 1000 tokens");
+        // Нормализация
+        uint256 monthsNorm = (months * 1e18) / 12; // 3/12, 6/12, 9/12, 12/12
+        uint256 amountNorm = (amount - 1000 * 1e18) / 1e18; // 1 = 1000 сверху минимума
+        // Весовые коэффициенты (60% срок, 40% сумма)
+        uint256 tierScore = (monthsNorm * 60 + amountNorm * 40) / 100;
+        // tierScore может быть больше 1e18, если сумма большая
+        if (tierScore <= 2e17) return 0; // Bronze (до 0.2)
+        if (tierScore <= 45e16) return 1; // Silver (до 0.45)
+        if (tierScore <= 75e16) return 2; // Gold (до 0.75 включительно)
+        return 3; // Platinum (всё, что выше)
     }
 } 

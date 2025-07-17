@@ -7,14 +7,19 @@
       "inputs": [
         {
           "internalType": "uint256",
-          "name": "positionId",
+          "name": "months",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "amount",
           "type": "uint256"
         }
       ],
       "name": "getTier",
       "outputs": [
         {
-          "internalType": "enum ITierCalculator.Tier",
+          "internalType": "uint8",
           "name": "",
           "type": "uint8"
         }

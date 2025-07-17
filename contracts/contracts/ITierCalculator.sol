@@ -9,10 +9,6 @@ interface ITierCalculator {
         Platinum // ≥ 30 months
     }
 
-    /**
-     * @dev Get tier for a specific position
-     * @param positionId Position ID
-     * @return Tier enum value
-     */
-    function getTier(uint256 positionId) external view returns (Tier);
+    // getTier: months, amount -> uint8 tier
+    function getTier(uint256 months, uint256 amount) external view returns (uint8);
 } 

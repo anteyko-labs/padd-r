@@ -27,28 +27,41 @@ async function main() {
   await multiStakeManager.waitForDeployment();
   console.log("MultiStakeManager deployed to:", await multiStakeManager.getAddress());
 
+  // Deploy PADNFTFactory
+  console.log("Deploying PADNFTFactory...");
+  const PADNFTFactory = await hre.ethers.getContractFactory("PADNFTFactory");
+  const padNftFactory = await PADNFTFactory.deploy(
+    await multiStakeManager.getAddress(),
+    await tierCalculator.getAddress(),
+    {} // overrides для ethers v6+
+  );
+  await padNftFactory.waitForDeployment();
+  console.log("PADNFTFactory deployed to:", await padNftFactory.getAddress());
+
   // Verify contracts on Etherscan
   if (hre.network.name !== "hardhat" && hre.network.name !== "localhost") {
     console.log("Waiting for block confirmations...");
-    await padToken.deployTransaction.wait(6);
-    await tierCalculator.deployTransaction.wait(6);
-    await multiStakeManager.deployTransaction.wait(6);
-
+    // Убраны .deployTransaction.wait(6) для совместимости с ethers v6
     console.log("Verifying contracts...");
     await hre.run("verify:verify", {
       address: await padToken.getAddress(),
       constructorArguments: [],
     });
-
     await hre.run("verify:verify", {
       address: await tierCalculator.getAddress(),
       constructorArguments: [],
     });
-
     await hre.run("verify:verify", {
       address: await multiStakeManager.getAddress(),
       constructorArguments: [
         await padToken.getAddress(),
+        await tierCalculator.getAddress(),
+      ],
+    });
+    await hre.run("verify:verify", {
+      address: await padNftFactory.getAddress(),
+      constructorArguments: [
+        await multiStakeManager.getAddress(),
         await tierCalculator.getAddress(),
       ],
     });

@@ -90,6 +90,10 @@ contract PADToken is ERC20, ERC20Permit, Pausable, AccessControl {
         super._update(from, to, value);
     }
 
+    function paused() public view override returns (bool) {
+        return super.paused();
+    }
+
     // --- AccessControl override ---
     function supportsInterface(bytes4 interfaceId) public view override(AccessControl) returns (bool) {
         return super.supportsInterface(interfaceId);

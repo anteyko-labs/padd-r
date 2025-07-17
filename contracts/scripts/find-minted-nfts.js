@@ -3,7 +3,7 @@ import { JsonRpcProvider, Contract } from "ethers";
 import dotenv from "dotenv";
 dotenv.config();
 
-const NFT_FACTORY_ADDRESS = "0xDBE1483fE39b26a92FE4B7cc3923c0cc9Ad50237"; // твой контракт
+const NFT_FACTORY_ADDRESS = "0xF3Dc58242fd58f833Df333f8db1B96BFB5b156f4"; // новый адрес NFT Factory
 const USER_ADDRESS = "0xB468B3837e185B59594A100c1583a98C79b524F3"; // твой адрес
 const RPC_URL = process.env.NEXT_PUBLIC_SEPOLIA_RPC_URL || "https://sepolia.infura.io/v3/9c259df705904ba5b2cbd4a10d00e7df";
 

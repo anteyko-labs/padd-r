@@ -30,10 +30,10 @@ contract MultiStakeManager is AccessControl, ReentrancyGuard {
     bytes32 public constant ADMIN_ROLE = keccak256("ADMIN_ROLE");
     
     IERC20 public immutable stakingToken;
-    uint256 public constant MIN_STAKE_DURATION = 1 hours; // 1 час
-    uint256 public constant MAX_STAKE_DURATION = 10 hours; // 10 часов
+    uint256 public constant MIN_STAKE_MONTHS = 3;
+    uint256 public constant MAX_STAKE_MONTHS = 12;
     uint256 public constant MAX_POSITIONS_PER_WALLET = 10;
-    uint256 public constant REWARD_INTERVAL = 30 minutes; // 30 минут
+    uint256 public constant REWARD_INTERVAL = 30 days; // 1 месяц
 
     uint256 private _nextPositionId = 1; // Start from 1
 
@@ -57,39 +57,45 @@ contract MultiStakeManager is AccessControl, ReentrancyGuard {
     event PositionClosed(uint256 indexed positionId, address indexed owner, uint256 amount, uint256 reward);
     event EmergencyWithdrawn(uint256 indexed positionId, address indexed owner, uint256 amount);
     event NFTFactorySet(address indexed newNFTFactory);
+    event DebugLog(string message, uint256 value);
 
     address public nftFactory;
+    address public tierCalculator;
 
-    constructor(address _stakingToken) {
+    constructor(address _stakingToken, address _tierCalculator) {
         require(_stakingToken != address(0), "Zero address");
+        require(_tierCalculator != address(0), "Zero tierCalculator");
         stakingToken = IERC20(_stakingToken);
+        tierCalculator = _tierCalculator;
         _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
         _grantRole(ADMIN_ROLE, msg.sender);
     }
 
-    function createPosition(uint256 amount, uint256 duration) external nonReentrant {
-        require(amount > 0, "Zero amount");
-        require(duration >= MIN_STAKE_DURATION, "Duration too short");
-        require(duration <= MAX_STAKE_DURATION, "Duration too long");
+    function createPosition(uint256 amount, uint256 months) external nonReentrant {
+        emit DebugLog("START createPosition", amount);
+        require(amount >= 1000 * 1e18, "Min 1000 tokens");
+        require(months == 3 || months == 6 || months == 9 || months == 12, "Invalid months");
         require(userPositions[msg.sender].length < MAX_POSITIONS_PER_WALLET, "Too many positions");
         require(amount <= type(uint128).max, "Amount too large");
+        require(stakingToken.balanceOf(msg.sender) >= amount, "Not enough balance");
+        require(stakingToken.allowance(msg.sender, address(this)) >= amount, "Not enough allowance");
+        if (address(stakingToken).code.length > 0) {
+            (bool ok, bytes memory data) = address(stakingToken).staticcall(abi.encodeWithSignature("paused()"));
+            if (ok && data.length == 32) {
+                require(!abi.decode(data, (bool)), "Token is paused");
+            }
+        }
+        emit DebugLog("Passed all require checks", amount);
 
         uint256 positionId = _nextPositionId++;
         uint256 startTime = block.timestamp;
+        uint256 duration = months * 30 days;
 
-        // Calculate tier based on duration
-        uint256 tier;
-        if (duration >= 9 hours) { // 9-10 часов
-            tier = 3; // Platinum
-        } else if (duration >= 7 hours) { // 7-9 часов
-            tier = 2; // Gold
-        } else if (duration >= 4 hours) { // 4-7 часов
-            tier = 1; // Silver
-        } else {
-            tier = 0; // Bronze
-        }
+        // Получаем tier через TierCalculator
+        (bool ok, bytes memory data) = address(tierCalculator).staticcall(abi.encodeWithSignature("getTier(uint256,uint256)", months, amount));
+        require(ok, "TierCalculator call failed");
+        uint8 tier = abi.decode(data, (uint8));
 
-        uint256 numMints = duration / REWARD_INTERVAL;
         uint256 interval = REWARD_INTERVAL;
         positions[positionId] = Position({
             amount: uint128(amount),
@@ -115,7 +121,7 @@ contract MultiStakeManager is AccessControl, ReentrancyGuard {
                 msg.sender,
                 positionId,
                 amount,
-                duration / 1 hours, // lockDurationHours
+                months,
                 startTime,
                 0,
                 startTime + interval
@@ -206,7 +212,7 @@ contract MultiStakeManager is AccessControl, ReentrancyGuard {
                 position.owner,
                 positionId,
                 position.amount,
-                position.duration / 1 hours, // lockDurationHours
+                position.duration / 30 days, // lockDurationMonths
                 position.startTime,
                 position.monthIndex + 1,
                 position.nextMintAt + REWARD_INTERVAL

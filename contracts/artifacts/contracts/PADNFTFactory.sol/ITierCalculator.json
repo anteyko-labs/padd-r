@@ -7,7 +7,12 @@
       "inputs": [
         {
           "internalType": "uint256",
-          "name": "duration",
+          "name": "months",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "amount",
           "type": "uint256"
         }
       ],
@@ -19,7 +24,7 @@
           "type": "uint8"
         }
       ],
-      "stateMutability": "pure",
+      "stateMutability": "view",
       "type": "function"
     }
   ],

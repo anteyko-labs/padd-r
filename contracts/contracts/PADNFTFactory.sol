@@ -6,7 +6,7 @@ import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 
 interface ITierCalculator {
-    function getTier(uint256 duration) external pure returns (uint8);
+    function getTier(uint256 months, uint256 amount) external view returns (uint8);
 }
 
 contract PADNFTFactory is ERC721A, AccessControl {
@@ -51,21 +51,21 @@ contract PADNFTFactory is ERC721A, AccessControl {
         address to,
         uint256 positionId,
         uint256 amountStaked,
-        uint256 lockDurationHours,
+        uint256 lockDurationMonths,
         uint256 startTimestamp,
-        uint256 hourIndex,
+        uint256 monthIndex,
         uint256 nextMintOn
     ) external onlyRole(MINTER_ROLE) returns (uint256) {
-        uint8 tier = ITierCalculator(tierCalculator).getTier(lockDurationHours * 1 hours);
+        uint8 tier = ITierCalculator(tierCalculator).getTier(lockDurationMonths, amountStaked);
         uint256 tokenId = _nextTokenId();
         _safeMint(to, 1);
         nftMetadata[tokenId] = NFTMetadata({
             positionId: positionId,
             amountStaked: amountStaked,
-            lockDurationHours: lockDurationHours,
+            lockDurationHours: lockDurationMonths, // Переименовать в lockDurationMonths если нужно
             startTimestamp: startTimestamp,
             tierLevel: tier,
-            hourIndex: hourIndex,
+            hourIndex: monthIndex, // Переименовать в monthIndex если нужно
             nextMintOn: nextMintOn
         });
         emit NFTMinted(to, tokenId, nftMetadata[tokenId]);
