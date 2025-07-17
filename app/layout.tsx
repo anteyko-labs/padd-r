@@ -4,6 +4,8 @@ import type { Metadata } from 'next';
 import { Urbanist } from 'next/font/google';
 import { ThemeProvider } from '@/components/theme-provider';
 import { RainbowProvider } from '@/components/providers/rainbow-provider';
+import { AnimatedBackground } from '@/components/animated-background';
+import { ClientOnly } from '@/components/ClientOnly';
 
 const urbanist = Urbanist({ 
   subsets: ['latin'],
@@ -35,6 +37,9 @@ export default function RootLayout({
   return (
     <html lang="en" className="dark" suppressHydrationWarning>
       <body className={`${urbanist.variable} font-sans bg-black text-white antialiased`}>
+        <ClientOnly>
+          <AnimatedBackground />
+        </ClientOnly>
         <ThemeProvider
           attribute="class"
           defaultTheme="dark"
