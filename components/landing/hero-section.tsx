@@ -12,21 +12,7 @@ export function HeroSection() {
 
   return (
     <section className="relative overflow-hidden py-24 md:py-32">
-      {/* Яркий встречающий фон только для hero */}
-      <motion.div
-        className="absolute left-1/2 top-0 -translate-x-1/2 -z-10"
-        style={{
-          width: '120vw',
-          height: '120vw',
-          borderRadius: '50%',
-          background: 'radial-gradient(circle, #00ffb2 0%, #0077ff 60%, #ff00e0 90%, transparent 100%)',
-          filter: 'blur(90px)',
-          opacity: 0.85,
-        }}
-        initial={{ scale: 0.9, opacity: 0.7 }}
-        animate={{ scale: 1.15, opacity: 1 }}
-        transition={{ duration: 2.5, type: 'spring' }}
-      />
+      {/* Удалён фон-гифка, теперь только глобальный фон */}
       <div className="relative z-10 container mx-auto text-center">
         <div className="max-w-5xl mx-auto">
           <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold mb-6 leading-tight">

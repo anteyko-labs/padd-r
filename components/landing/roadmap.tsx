@@ -75,58 +75,52 @@ export function Roadmap() {
   };
 
   return (
-    <section id="roadmap" className="py-16 px-4 sm:px-6 lg:px-8 bg-gray-950/50">
-      <div className="container mx-auto">
-        <div className="text-center mb-12">
-          <h2 className="text-3xl md:text-4xl font-bold mb-4">Roadmap</h2>
-          <p className="text-xl text-gray-400 max-w-2xl mx-auto">
-            Our journey to revolutionize luxury service access
-          </p>
-        </div>
-        
-        <div className="max-w-4xl mx-auto">
-          <div className="relative">
-            {/* Timeline line */}
-            <div className="absolute left-8 top-0 bottom-0 w-0.5 bg-gray-700 hidden md:block" />
-            
-            <div className="space-y-8">
-              {roadmapItems.map((item, index) => (
-                <div key={index} className="relative">
-                  {/* Timeline dot */}
-                  <div className="absolute left-6 w-4 h-4 rounded-full border-4 border-gray-900 hidden md:block" 
-                       style={{ backgroundColor: item.status === 'completed' ? '#22c55e' : item.status === 'in-progress' ? '#eab308' : '#6b7280' }} />
-                  
-                  <Card className="bg-gray-900/50 border-gray-800 md:ml-16 card-hover">
-                    <CardContent className="p-6">
-                      <div className="flex items-center justify-between mb-4">
-                        <div className="flex items-center space-x-3">
-                          {getStatusIcon(item.status)}
-                          <div>
-                            <h3 className="text-xl font-bold text-white">{item.title}</h3>
-                            <p className="text-emerald-400 font-semibold">{item.quarter}</p>
-                          </div>
+    <div>
+      <div className="text-center mb-12">
+        <h2 className="text-3xl md:text-4xl font-bold mb-4">Roadmap</h2>
+        <p className="text-xl text-gray-400 max-w-2xl mx-auto">
+          Our journey to revolutionize luxury service access
+        </p>
+      </div>
+      <div className="max-w-4xl mx-auto">
+        <div className="relative">
+          {/* Timeline line */}
+          <div className="absolute left-8 top-0 bottom-0 w-0.5 bg-gray-700 hidden md:block" />
+          <div className="space-y-8">
+            {roadmapItems.map((item, index) => (
+              <div key={index} className="relative">
+                {/* Timeline dot */}
+                <div className="absolute left-6 w-4 h-4 rounded-full border-4 border-gray-900 hidden md:block" 
+                     style={{ backgroundColor: item.status === 'completed' ? '#22c55e' : item.status === 'in-progress' ? '#eab308' : '#6b7280' }} />
+                <Card className="bg-gray-900/50 border-gray-800 md:ml-16 card-hover">
+                  <CardContent className="p-6">
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="flex items-center space-x-3">
+                        {getStatusIcon(item.status)}
+                        <div>
+                          <h3 className="text-xl font-bold text-white">{item.title}</h3>
+                          <p className="text-emerald-400 font-semibold">{item.quarter}</p>
                         </div>
-                        <Badge className={`${getStatusColor(item.status)} text-white capitalize`}>
-                          {item.status.replace('-', ' ')}
-                        </Badge>
                       </div>
-                      
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                        {item.items.map((feature, i) => (
-                          <div key={i} className="flex items-center text-gray-300">
-                            <div className="w-1.5 h-1.5 bg-emerald-400 rounded-full mr-3" />
-                            {feature}
-                          </div>
-                        ))}
-                      </div>
-                    </CardContent>
-                  </Card>
-                </div>
-              ))}
-            </div>
+                      <Badge className={`${getStatusColor(item.status)} text-white capitalize`}>
+                        {item.status.replace('-', ' ')}
+                      </Badge>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      {item.items.map((feature, i) => (
+                        <div key={i} className="flex items-center text-gray-300">
+                          <div className="w-1.5 h-1.5 bg-emerald-400 rounded-full mr-3" />
+                          {feature}
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            ))}
           </div>
         </div>
       </div>
-    </section>
+    </div>
   );
 }

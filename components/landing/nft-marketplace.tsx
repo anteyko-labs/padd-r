@@ -40,7 +40,7 @@ export function NFTMarketplace() {
   ];
 
   return (
-    <section id="nft" className="py-16 px-4 sm:px-6 lg:px-8">
+    <div className="py-16 px-4 sm:px-6 lg:px-8">
       <div className="container mx-auto">
         <div className="text-center mb-12">
           <h2 className="text-3xl md:text-4xl font-bold mb-4">NFT Marketplace</h2>
@@ -137,6 +137,6 @@ export function NFTMarketplace() {
           ))}
         </div>
       </div>
-    </section>
+    </div>
   );
 }
