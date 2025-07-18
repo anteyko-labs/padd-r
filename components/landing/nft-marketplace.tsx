@@ -4,6 +4,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ExternalLink, Eye, TrendingUp } from 'lucide-react';
+import { useWallet } from '@/hooks/use-wallet';
+import { useRouter } from 'next/navigation';
+import { useState } from 'react';
 
 export function NFTMarketplace() {
   const nfts = [
@@ -12,32 +15,47 @@ export function NFTMarketplace() {
       type: 'Tradeable NFT',
       tier: 'Silver',
       benefits: ['7% discount', 'Car upgrades 2x/year', 'Priority booking'],
-      image: 'https://images.pexels.com/photos/844124/pexels-photo-844124.jpeg?auto=compress&cs=tinysrgb&w=400',
+      image: 'https://images.unsplash.com/photo-1616536368667-99f53a750fb8?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8OHx8c2lsdmVyfGVufDB8fDB8fHww',
       tradeable: true,
       rarity: 'Common',
-      price: '1.2 BNB',
+      // price: '1.2 BNB',
     },
     {
       name: 'Gold NFT',
       type: 'Tradeable NFT',
       tier: 'Gold',
       benefits: ['10% discount', 'VIP restaurant access', 'Premium rentals'],
-      image: 'https://images.pexels.com/photos/1036622/pexels-photo-1036622.jpeg?auto=compress&cs=tinysrgb&w=400',
+      image: 'https://images.unsplash.com/photo-1610375461369-d613b564f4c4?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Nnx8Z29sZHxlbnwwfHwwfHx8MA%3D%3D',
       tradeable: true,
       rarity: 'Rare',
-      price: '2.5 BNB',
+      // price: '2.5 BNB',
     },
     {
       name: 'Platinum NFT',
       type: 'Tradeable NFT',
       tier: 'Platinum',
       benefits: ['12% discount', 'Track days', 'Personal manager'],
-      image: 'https://images.pexels.com/photos/1545743/pexels-photo-1545743.jpeg?auto=compress&cs=tinysrgb&w=400',
+      image: 'https://images.unsplash.com/photo-1641580543317-4cea85891afe?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTE0fHxjcnlwdG98ZW58MHx8MHx8fDA%3D',
       tradeable: true,
       rarity: 'Legendary',
-      price: '8.0 BNB',
+      // price: '8.0 BNB',
     },
   ];
+  const { isConnected, connectWallet, connectors } = useWallet();
+  const router = useRouter();
+  const [loadingIndex, setLoadingIndex] = useState<number | null>(null);
+
+  const handleTrade = async (e: React.MouseEvent<HTMLButtonElement>, index: number) => {
+    e.preventDefault();
+    setLoadingIndex(index);
+    if (!isConnected) {
+      await connectWallet(connectors[0]?.id);
+      setLoadingIndex(null);
+      return;
+    }
+    router.push('/dashboard/rewards');
+    setLoadingIndex(null);
+  };
 
   return (
     <div className="py-16 px-4 sm:px-6 lg:px-8">
@@ -76,9 +94,7 @@ export function NFTMarketplace() {
                   <Badge variant="outline" className="border-emerald-600 text-emerald-400">
                     {nft.tier} Tier
                   </Badge>
-                  {nft.tradeable && nft.price && (
-                    <div className="text-emerald-400 font-bold">{nft.price}</div>
-                  )}
+                  {/* Цена убрана */}
                 </div>
               </CardHeader>
               
@@ -108,9 +124,11 @@ export function NFTMarketplace() {
                     <Button 
                       size="sm" 
                       className="flex-1 bg-emerald-600 hover:bg-emerald-700"
+                      onClick={(e) => handleTrade(e, index)}
+                      disabled={loadingIndex === index}
                     >
                       <ExternalLink size={16} className="mr-1" />
-                      Trade
+                      {loadingIndex === index ? '...' : 'Trade'}
                     </Button>
                   )}
                 </div>
