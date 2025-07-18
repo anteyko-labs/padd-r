@@ -13,16 +13,31 @@ import { Footer } from '@/components/landing/footer';
 
 export function LandingPage() {
   return (
-    <div className="min-h-screen bg-black">
+    <div className="min-h-screen bg-black/70 relative overflow-x-hidden">
+      {/* Глобальный фон-гифка */}
+      <div className="fixed inset-0 w-full h-full -z-50 pointer-events-none">
+        <iframe
+          src="https://gifer.com/embed/RRr2"
+          width="100%"
+          height="100%"
+          style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}
+          frameBorder="0"
+          allowFullScreen
+          title="Animated Global Background"
+        />
+      </div>
       <Navbar />
-      <HeroSection />
-      <HowItWorks />
-      <UtilityHighlights />
-      <LoyaltyTiers />
-      <NFTMarketplace />
-      <Roadmap />
-      <Tokenomics />
-      <FAQSection />
+      <main className="relative z-10 flex flex-col gap-0">
+        <HeroSection />
+        <HowItWorks />
+        <UtilityHighlights />
+        <LoyaltyTiers />
+        <NFTMarketplace />
+        <Roadmap />
+        <Tokenomics />
+        <FAQSection />
+        <div className="mb-16" />
+      </main>
       <Footer />
     </div>
   );

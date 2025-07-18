@@ -36,43 +36,38 @@ export function UtilityHighlights() {
   ];
 
   return (
-    <section id="utilities" className="py-16 px-4 sm:px-6 lg:px-8">
-      <div className="container mx-auto">
-        <div className="text-center mb-12">
-          <h2 className="text-3xl md:text-4xl font-bold mb-4">Utility Ecosystem</h2>
-          <p className="text-xl text-gray-400 max-w-2xl mx-auto">
-            Real-world services powered by PADD-R tokens
-          </p>
-        </div>
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {utilities.map((utility, index) => (
-            <Card 
-              key={index} 
-              className="group bg-gray-900/50 border-gray-800 hover:border-emerald-500/50 transition-all duration-300 cursor-pointer card-hover overflow-hidden"
-            >
-              <CardContent className="p-6 text-center relative">
-                <div className={`w-16 h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-r ${utility.gradient} flex items-center justify-center group-hover:scale-110 transition-transform duration-300`}>
-                  <utility.icon size={28} className="text-white" />
-                </div>
-                <h3 className="text-xl font-semibold mb-2 text-white">{utility.title}</h3>
-                <p className="text-gray-400 mb-4">{utility.description}</p>
-                
-                {/* Benefits on hover */}
-                <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                  <div className="space-y-2">
-                    {utility.benefits.map((benefit, i) => (
-                      <div key={i} className="text-sm text-emerald-400 bg-emerald-500/10 rounded-lg px-3 py-1">
-                        {benefit}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+    <div>
+      <div className="text-center mb-12">
+        <h2 className="text-3xl md:text-4xl font-bold mb-4">Utility Ecosystem</h2>
+        <p className="text-xl text-gray-400 max-w-2xl mx-auto">
+          Real-world services powered by PADD-R tokens
+        </p>
       </div>
-    </section>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        {utilities.map((utility, index) => (
+          <Card 
+            key={index} 
+            className="group bg-gray-900/50 border-gray-800 hover:border-emerald-500/50 transition-all duration-300 cursor-pointer card-hover overflow-hidden"
+          >
+            <CardContent className="p-6 text-center relative">
+              <div className={`w-16 h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-r ${utility.gradient} flex items-center justify-center group-hover:scale-110 transition-transform duration-300`}>
+                <utility.icon size={28} className="text-white" />
+              </div>
+              <h3 className="text-xl font-semibold mb-2 text-white">{utility.title}</h3>
+              <p className="text-gray-400 mb-4">{utility.description}</p>
+              <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                <div className="space-y-2">
+                  {utility.benefits.map((benefit, i) => (
+                    <div key={i} className="text-sm text-emerald-400 bg-emerald-500/10 rounded-lg px-3 py-1">
+                      {benefit}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    </div>
   );
 }

@@ -44,8 +44,8 @@ export function FAQSection() {
   ];
 
   return (
-    <section className="py-16 px-4 sm:px-6 lg:px-8 bg-gray-950/50">
-      <div className="container mx-auto max-w-4xl">
+    <div className="py-16 px-4 sm:px-6 lg:px-8">
+      <div className="container mx-auto">
         <div className="text-center mb-12">
           <h2 className="text-3xl md:text-4xl font-bold mb-4 flex items-center justify-center">
             <HelpCircle className="mr-3 text-emerald-400" size={32} />
@@ -55,8 +55,7 @@ export function FAQSection() {
             Everything you need to know about PADD-R tokens and rewards
           </p>
         </div>
-        
-        <div className="space-y-4">
+        <div className="space-y-4 max-w-6xl mx-auto">
           {faqItems.map((item, index) => (
             <Card key={index} className="bg-gray-900/50 border-gray-800 card-hover">
               <CardContent className="p-0">
@@ -82,7 +81,6 @@ export function FAQSection() {
             </Card>
           ))}
         </div>
-        
         <div className="text-center mt-12">
           <p className="text-gray-400 mb-4">Still have questions?</p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
@@ -109,6 +107,6 @@ export function FAQSection() {
           </div>
         </div>
       </div>
-    </section>
+    </div>
   );
 }
