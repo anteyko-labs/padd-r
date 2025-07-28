@@ -198,10 +198,10 @@ export function UserProfile() {
   });
 
   const tierProgress = [
-    { tier: 'Bronze', required: '6 months - 1 year', achieved: achievedTiers.has('Bronze') },
-    { tier: 'Silver', required: '1 - 1.5 years', achieved: achievedTiers.has('Silver') },
-    { tier: 'Gold', required: '1.5 - 2.5 years', achieved: achievedTiers.has('Gold') },
-    { tier: 'Platinum', required: '2.5+ years', achieved: achievedTiers.has('Platinum') },
+    { tier: 'Bronze', required: '3 months', achieved: achievedTiers.has('Bronze') },
+    { tier: 'Silver', required: '6 months', achieved: achievedTiers.has('Silver') },
+    { tier: 'Gold', required: '9 months', achieved: achievedTiers.has('Gold') },
+    { tier: 'Platinum', required: '12 months', achieved: achievedTiers.has('Platinum') },
   ];
 
   const tierColors: Record<string, string> = {

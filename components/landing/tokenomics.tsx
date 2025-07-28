@@ -62,7 +62,7 @@ export function Tokenomics() {
             <div className="space-y-6">
               <Card className="bg-gray-900/50 border-gray-800">
                 <CardHeader>
-                  <CardTitle className="text-2xl text-white">Token Information</CardTitle>
+                  <CardTitle className="text-xl md:text-2xl text-white">Token Information</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   {tokenInfo.map((info, index) => (

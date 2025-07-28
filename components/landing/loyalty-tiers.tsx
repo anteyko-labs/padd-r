@@ -74,7 +74,7 @@ export function LoyaltyTiers() {
 
   return (
     <div>
-      <div className="text-center mb-12">
+      <div className="text-center mb-12 pt-8 md:pt-12">
         <h2 className="text-3xl md:text-4xl font-bold mb-4">Loyalty Tiers</h2>
         <p className="text-xl text-gray-400 max-w-2xl mx-auto">
           Stake longer, earn more. Unlock exclusive benefits and NFT rewards based on staking duration.
