@@ -9,7 +9,7 @@ export function Footer() {
     {
       title: 'Resources',
       links: [
-        { name: 'Whitepaper', href: '#', icon: FileText },
+        { name: 'Whitepaper', href: 'https://paddock.gitbook.io/paddock-docs', icon: FileText },
         { name: 'Audit Report', href: '#', icon: FileText },
         { name: 'BscScan', href: '#', icon: ExternalLink },
         { name: 'PancakeSwap', href: '#', icon: ExternalLink },
