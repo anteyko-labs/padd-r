@@ -61,7 +61,24 @@ export function formatDate(timestamp: bigint): string {
   return new Date(Number(timestamp) * 1000).toLocaleDateString();
 }
 
-export const PAD_TOKEN_ADDRESS = '0xAFD38DDaA3e7829693B7a80a029a00a61FFbeC08';
-export const STAKE_MANAGER_ADDRESS = '0x330356f6ad6fe0977d85B42A2e538294A211a234';
-export const NFT_FACTORY_ADDRESS = '0x3453a74D3EDE70cA317e6A29Bd04e82952B37050';
-export const TIER_CALCULATOR_ADDRESS = '0xe9351C332C36BEecC61a216C42144E2Db5Fb21B7'; 
+// Обновленные адреса контрактов с поддержкой isInitialStakingNFT
+export const PAD_TOKEN_ADDRESS = '0x073d23C46d11ae1FD00F15a8891C7848893951a5';
+export const STAKE_MANAGER_ADDRESS = '0xcF01195B9DA94438453D57AD0BeADE3ff9F481A7';
+export const NFT_FACTORY_ADDRESS = '0x486001b88DFa338C62ADA3174661B3640DB94e59';
+export const TIER_CALCULATOR_ADDRESS = '0xd90536e41A6E289b28D85F3DF501334c4ddc076E';
+
+// Красивые изображения NFT для каждого тира (из интернета)
+export const NFT_IMAGES = {
+  'Bronze': 'https://images.unsplash.com/photo-1639762681485-074b7f938ba0?w=400&h=400&fit=crop&crop=center&auto=format&q=80',
+  'Silver': 'https://images.unsplash.com/photo-1639762681057-408e52192e55?w=400&h=400&fit=crop&crop=center&auto=format&q=80',
+  'Gold': 'https://images.unsplash.com/photo-1639762681485-074b7f938ba0?w=400&h=400&fit=crop&crop=center&auto=format&q=80',
+  'Platinum': 'https://images.unsplash.com/photo-1639762681057-408e52192e55?w=400&h=400&fit=crop&crop=center&auto=format&q=80'
+};
+
+// Альтернативные изображения (более надежные)
+export const NFT_IMAGES_FALLBACK = {
+  'Bronze': 'https://picsum.photos/400/400?random=1',
+  'Silver': 'https://picsum.photos/400/400?random=2', 
+  'Gold': 'https://picsum.photos/400/400?random=3',
+  'Platinum': 'https://picsum.photos/400/400?random=4'
+}; 

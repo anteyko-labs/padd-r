@@ -16,7 +16,8 @@ interface IPADNFTFactory {
         uint256 lockDurationMonths,
         uint256 startTimestamp,
         uint256 monthIndex,
-        uint256 nextMintOn
+        uint256 nextMintOn,
+        bool isInitialStakingNFT
     ) external returns (uint256);
 }
 
@@ -58,6 +59,7 @@ contract MultiStakeManager is AccessControl, ReentrancyGuard {
     event EmergencyWithdrawn(uint256 indexed positionId, address indexed owner, uint256 amount);
     event NFTFactorySet(address indexed newNFTFactory);
     event DebugLog(string message, uint256 value);
+    event NextNFTMinted(uint256 indexed positionId, address indexed owner, uint256 indexed monthIndex);
 
     address public nftFactory;
     address public tierCalculator;
@@ -124,7 +126,8 @@ contract MultiStakeManager is AccessControl, ReentrancyGuard {
                 months,
                 startTime,
                 0,
-                startTime + interval
+                startTime + interval,
+                true // isInitialStakingNFT = true для NFT за начало стейкинга
             );
         }
     }
@@ -204,8 +207,14 @@ contract MultiStakeManager is AccessControl, ReentrancyGuard {
     function mintNextNFT(uint256 positionId) external {
         Position storage position = positions[positionId];
         require(position.isActive, "Position not active");
+        require(position.owner == msg.sender, "Not position owner"); // Только владелец может минтить
         require(block.timestamp >= position.nextMintAt, "Too early for next NFT");
         require(position.monthIndex < (position.duration / REWARD_INTERVAL), "All NFTs minted");
+        
+        // Строгая проверка времени - должно пройти минимум 30 дней
+        uint256 timeSinceLastMint = block.timestamp - (position.nextMintAt - REWARD_INTERVAL);
+        require(timeSinceLastMint >= REWARD_INTERVAL, "Must wait full interval");
+        
         // Mint NFT
         if (nftFactory != address(0)) {
             IPADNFTFactory(nftFactory).mintNFT(
@@ -215,10 +224,15 @@ contract MultiStakeManager is AccessControl, ReentrancyGuard {
                 position.duration / 30 days, // lockDurationMonths
                 position.startTime,
                 position.monthIndex + 1,
-                position.nextMintAt + REWARD_INTERVAL
+                position.nextMintAt + REWARD_INTERVAL,
+                false // isInitialStakingNFT = false для последующих NFT
             );
         }
+        
+        // Обновляем состояние ПОСЛЕ минтинга
         position.monthIndex += 1;
         position.nextMintAt += uint32(REWARD_INTERVAL);
+        
+        emit NextNFTMinted(positionId, position.owner, position.monthIndex);
     }
 } 

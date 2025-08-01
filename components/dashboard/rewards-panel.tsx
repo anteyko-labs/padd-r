@@ -35,6 +35,7 @@ type DashboardNFT = {
   owner?: string;
   currentUser?: string;
   image?: string;
+  isInitialStakingNFT?: boolean;
 };
 
 type DashboardPosition = StakingPosition & {
@@ -77,15 +78,9 @@ export function RewardsPanel() {
 
   // Функция для вычисления статуса NFT
   function getNFTStatus(nft: DashboardNFT) {
-    // Примерная логика, доработай под свои правила:
-    // - active: transferable и срок не истёк
-    // - expired: если есть поле nextMintOn и оно в прошлом
-    // - used: если есть поле used или аналогичное (заглушка)
-    // - transferred: если есть поле owner и он не совпадает с текущим пользователем (заглушка)
-    const now = Date.now() / 1000;
-    if (nft.used) return 'used';
+    // Упрощенная логика: все NFT показываем как активные
+    // Пока NFT не переведены, они остаются активными
     if (nft.owner && nft.owner !== nft.currentUser) return 'transferred';
-    if (nft.nextMintOn && Number(nft.nextMintOn) < now) return 'expired';
     return 'active';
   }
 
@@ -103,7 +98,14 @@ export function RewardsPanel() {
     return nfts.map((nft: any, index: number) => (
       <Card key={index} className="bg-gray-900/50 border-gray-800 card-hover overflow-hidden">
         <div className="relative">
-          <img src={nft.image} alt={nft.tierInfo?.name} className="w-full h-48 object-cover" />
+          <img 
+            src={nft.image || '/placeholder-nft.svg'} 
+            alt={nft.tierInfo?.name} 
+            className="w-full h-48 object-cover"
+            onError={(e) => {
+              e.currentTarget.src = '/placeholder-nft.svg';
+            }}
+          />
           <div className="absolute top-4 right-4">
             <Badge className={`${
               nft.tierInfo?.name === 'Platinum' ? 'bg-emerald-600' :
@@ -113,6 +115,13 @@ export function RewardsPanel() {
               {nft.tierInfo?.name}
             </Badge>
           </div>
+          {nft.isInitialStakingNFT && (
+            <div className="absolute top-4 left-4">
+              <Badge className="bg-blue-600 text-white">
+                Initial
+              </Badge>
+            </div>
+          )}
         </div>
         <CardHeader>
           <CardTitle className="text-lg text-white">{nft.tierInfo?.name} NFT #{nft.tokenId}</CardTitle>
@@ -123,8 +132,18 @@ export function RewardsPanel() {
               <span className="text-gray-400">Started: {nft.formattedStartDate}</span>
             </div>
             <div className="flex items-center space-x-2">
-              <span className="text-gray-400">Staked for: {Number(nft.lockDurationMonths)} month{Number(nft.lockDurationMonths) === 1 ? '' : 's'}</span>
+              <span className="text-gray-400">Staked: {nft.formattedAmountStaked} PAD</span>
             </div>
+            <div className="flex items-center space-x-2">
+              <span className="text-gray-400">Type: {nft.isInitialStakingNFT ? 'Initial Staking' : 'Monthly Reward'}</span>
+            </div>
+            <div className="flex items-center space-x-2">
+              <span className="text-gray-400">Next: {nft.formattedNextMintDate}</span>
+            </div>
+          </div>
+          {/* Debug info */}
+          <div className="text-xs text-gray-500 mt-2">
+            Image URL: {nft.image || 'No image'}
           </div>
         </CardContent>
       </Card>
@@ -174,8 +193,8 @@ export function RewardsPanel() {
   }
 
   return (
-    <div className="space-y-8">
-      {/* Фильтр по статусу */}
+            <div className="space-y-8">
+          {/* Фильтр по статусу */}
       <div className="flex gap-2 mb-4">
         <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.95 }} transition={{ type: 'spring', stiffness: 300 }}>
           <Button
@@ -187,18 +206,6 @@ export function RewardsPanel() {
             onClick={() => setFilter('active')}
           >
             Актуальные
-          </Button>
-        </motion.div>
-        <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.95 }} transition={{ type: 'spring', stiffness: 300 }}>
-          <Button
-            variant="ghost"
-            size="sm"
-            className={`transition-colors rounded-full px-4 py-2 font-semibold border-2
-              ${filter === 'expired' ? 'bg-yellow-600 text-white border-yellow-600 shadow-lg' : 'bg-transparent border-yellow-800 text-yellow-400 hover:bg-yellow-900/20'}
-            `}
-            onClick={() => setFilter('expired')}
-          >
-            Истёк срок
           </Button>
         </motion.div>
         <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.95 }} transition={{ type: 'spring', stiffness: 300 }}>
@@ -251,7 +258,14 @@ export function RewardsPanel() {
               >
                 <Card className="bg-gray-900/50 border-gray-800 card-hover overflow-hidden">
                   <div className="relative">
-                    <img src={nft.image} alt={nft.tierInfo?.name} className="w-full h-48 object-cover" />
+                    <img 
+                      src={nft.image || '/placeholder-nft.svg'} 
+                      alt={nft.tierInfo?.name} 
+                      className="w-full h-48 object-cover"
+                      onError={(e) => {
+                        e.currentTarget.src = '/placeholder-nft.svg';
+                      }}
+                    />
                     <div className="absolute top-4 right-4">
                       <Badge className={`${
                         nft.tierInfo?.name === 'Platinum' ? 'bg-emerald-600' :
@@ -261,6 +275,13 @@ export function RewardsPanel() {
                         {nft.tierInfo?.name}
                       </Badge>
                     </div>
+                    {nft.isInitialStakingNFT && (
+                      <div className="absolute top-4 left-4">
+                        <Badge className="bg-blue-600 text-white">
+                          Initial
+                        </Badge>
+                      </div>
+                    )}
                   </div>
                   <CardHeader>
                     <CardTitle className="text-lg text-white">{nft.tierInfo?.name} NFT #{nft.tokenId}</CardTitle>
@@ -271,7 +292,13 @@ export function RewardsPanel() {
                         <span className="text-gray-400">Started: {nft.formattedStartDate}</span>
                       </div>
                       <div className="flex items-center space-x-2">
-                        <span className="text-gray-400">Staked for: {Number(nft.lockDurationMonths)} month{Number(nft.lockDurationMonths) === 1 ? '' : 's'}</span>
+                        <span className="text-gray-400">Staked: {nft.formattedAmountStaked} PAD</span>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <span className="text-gray-400">Type: {nft.isInitialStakingNFT ? 'Initial Staking' : 'Monthly Reward'}</span>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <span className="text-gray-400">Next: {nft.formattedNextMintDate}</span>
                       </div>
                     </div>
                   </CardContent>

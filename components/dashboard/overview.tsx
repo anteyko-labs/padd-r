@@ -3,11 +3,12 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { Wallet, Shield, Trophy, Clock, TrendingUp, Gift } from 'lucide-react';
+import { Wallet, Shield, Trophy, Clock, TrendingUp, Gift, Wifi } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { formatDuration, formatTokenAmount, TIER_LEVELS } from '@/lib/contracts/config';
 import React, { useContext } from 'react';
 import { DashboardDataContext } from './layout';
+import { useAccount, usePublicClient, useChainId } from 'wagmi';
 
 export function Overview() {
   const { padBalance, stakingPositions, nftBalance } = useContext(DashboardDataContext);
@@ -27,6 +28,7 @@ export function Overview() {
     totalStakedInNFTs = 0,
     currentTier: nftTier = 'None',
   } = nftBalance;
+  const chainId = useChainId();
   const router = useRouter();
 
   // Форматируем баланс
@@ -94,6 +96,28 @@ export function Overview() {
 
   return (
     <div className="space-y-8">
+      {/* Network Status */}
+      <Card className="bg-gray-900/50 border-gray-800">
+        <CardContent className="p-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-2">
+              <Wifi size={20} className="text-emerald-400" />
+              <span className="text-white font-medium">Network Status</span>
+            </div>
+            <div className="flex items-center space-x-2">
+              <Badge className={`${
+                chainId === 11155111 ? 'bg-emerald-600' : 'bg-red-600'
+              } text-white`}>
+                {chainId === 11155111 ? 'Sepolia Testnet' : 'Wrong Network'}
+              </Badge>
+              {chainId !== 11155111 && (
+                <span className="text-red-400 text-sm">Please switch to Sepolia</span>
+              )}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <Card className="bg-gray-900/50 border-gray-800 card-hover">

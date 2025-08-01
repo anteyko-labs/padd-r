@@ -27,6 +27,7 @@ contract PADNFTFactory is ERC721A, AccessControl {
         uint8 tierLevel;
         uint256 hourIndex;
         uint256 nextMintOn;
+        bool isInitialStakingNFT; // Новое поле: true если NFT за начало стейкинга
     }
 
     mapping(uint256 => NFTMetadata) public nftMetadata;
@@ -54,7 +55,8 @@ contract PADNFTFactory is ERC721A, AccessControl {
         uint256 lockDurationMonths,
         uint256 startTimestamp,
         uint256 monthIndex,
-        uint256 nextMintOn
+        uint256 nextMintOn,
+        bool isInitialStakingNFT
     ) external onlyRole(MINTER_ROLE) returns (uint256) {
         uint8 tier = ITierCalculator(tierCalculator).getTier(lockDurationMonths, amountStaked);
         uint256 tokenId = _nextTokenId();
@@ -66,7 +68,8 @@ contract PADNFTFactory is ERC721A, AccessControl {
             startTimestamp: startTimestamp,
             tierLevel: tier,
             hourIndex: monthIndex, // Переименовать в monthIndex если нужно
-            nextMintOn: nextMintOn
+            nextMintOn: nextMintOn,
+            isInitialStakingNFT: isInitialStakingNFT
         });
         emit NFTMinted(to, tokenId, nftMetadata[tokenId]);
         return tokenId;

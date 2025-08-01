@@ -11,8 +11,6 @@ export function ConnectWalletButton({ className }: { className?: string }) {
   const { disconnect } = useDisconnect();
 
   const handleConnect = () => {
-    console.log('Connect button clicked');
-    
     if (isConnected) {
       disconnect();
       return;
@@ -20,13 +18,10 @@ export function ConnectWalletButton({ className }: { className?: string }) {
 
     try {
       if (openConnectModal) {
-        console.log('Opening RainbowKit modal...');
         openConnectModal();
-      } else {
-        console.error('RainbowKit modal not available');
       }
     } catch (error) {
-      console.error('Error opening connect modal:', error);
+      // Silent error handling
     }
   };
 

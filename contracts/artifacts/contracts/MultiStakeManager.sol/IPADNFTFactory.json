@@ -39,6 +39,11 @@
           "internalType": "uint256",
           "name": "nextMintOn",
           "type": "uint256"
+        },
+        {
+          "internalType": "bool",
+          "name": "isInitialStakingNFT",
+          "type": "bool"
         }
       ],
       "name": "mintNFT",

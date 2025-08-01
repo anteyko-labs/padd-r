@@ -29,10 +29,10 @@ const tierFolders: Record<string, string> = {
 };
 
 const tierImages: Record<string, string> = {
-  Bronze: "https://xmnvjrtznshxsbrkohhv.supabase.co/storage/v1/object/sign/assets/tier1_01.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV80ZmVlZmUwOC05ODZiLTQ2ZTgtOWM1NC1iZmYyNDkxOTcwNDEiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJhc3NldHMvdGllcjFfMDEucG5nIiwiaWF0IjoxNzUyNzQxNTc4LCJleHAiOjQyNzU2MjE1Nzh9.kMXZn6i-WPjX6qaRmlh4tif7PXBecZQm5DPmEIpIt7E",
-  Silver: "https://xmnvjrtznshxsbrkohhv.supabase.co/storage/v1/object/sign/assets/tier2_01.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV80ZmVlZmUwOC05ODZiLTQ2ZTgtOWM1NC1iZmYyNDkxOTcwNDEiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJhc3NldHMvdGllcjJfMDEucG5nIiwiaWF0IjoxNzUyNzQxNTk3LCJleHAiOjE5NjAxMDE1OTd9.ajuNtgQyXSRuUt8MSF_qQiai7EQhZ62Zb5mSOnrv0sw",
-  Gold: "https://xmnvjrtznshxsbrkohhv.supabase.co/storage/v1/object/sign/assets/tier3_01.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV80ZmVlZmUwOC05ODZiLTQ2ZTgtOWM1NC1iZmYyNDkxOTcwNDEiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJhc3NldHMvdGllcjNfMDEucG5nIiwiaWF0IjoxNzUyNzQxNjA2LCJleHAiOjE3ODQyNzc2MDZ9.5jvtVS-7TMVtxSmbWbWfLcu41zXtKGvR61TWijycHSI",
-  Platinum: "https://xmnvjrtznshxsbrkohhv.supabase.co/storage/v1/object/sign/assets/tier4_01.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV80ZmVlZmUwOC05ODZiLTQ2ZTgtOWM1NC1iZmYyNDkxOTcwNDEiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJhc3NldHMvdGllcjRfMDEucG5nIiwiaWF0IjoxNzUyNzQxNjE1LCJleHAiOjE3ODQyNzc2MTV9.6nV-Fhh2I4cwoC9I8evbCAC0DalHauhNrb3_37zkRFE"
+  Bronze: "https://images.unsplash.com/photo-1614730321146-b6fa6a46bcb4?w=400&h=400&fit=crop&crop=center",
+  Silver: "https://images.unsplash.com/photo-1614732414444-096e5f1122d5?w=400&h=400&fit=crop&crop=center",
+  Gold: "https://images.unsplash.com/photo-1614730321146-b6fa6a46bcb4?w=400&h=400&fit=crop&crop=center",
+  Platinum: "https://images.unsplash.com/photo-1614732414444-096e5f1122d5?w=400&h=400&fit=crop&crop=center"
 };
 
 // Безопасный перевод строки в wei (bigint)
@@ -101,14 +101,7 @@ export function StakingForm() {
   };
 
   // --- handleStake ---
-  const handleStake = async () => {
-    console.log('handleStake called');
-    console.log('address:', address);
-    console.log('chainId:', chainId);
-    console.log('padTokenAddress:', padTokenAddress);
-    console.log('stakeManagerAddress:', stakeManagerAddress);
-    console.log('writeContractAsync:', writeContractAsync);
-    console.log('Stake button clicked', { stakeAmount, stakeMonths });
+      const handleStake = async () => {
     if (!address || !padTokenAddress || !stakeManagerAddress) {
       toast({ title: 'Wallet not connected', description: 'Connect your wallet and select network', });
       console.error('No wallet or contract address');
@@ -135,21 +128,11 @@ export function StakingForm() {
       toast({ title: 'Ошибка', description: 'Срок только 3, 6, 9 или 12 месяцев!' });
       return;
     }
-    if (typeof window !== 'undefined') {
-      console.log('handleStake:');
-      console.log('stakeAmount:', stakeAmount);
-      console.log('stakeDuration:', stakeMonths);
-      console.log('duration (сек):', months * 30 * 24 * 60 * 60);
-      console.log('address:', address);
-      console.log('padTokenAddress:', padTokenAddress);
-      console.log('stakeManagerAddress:', stakeManagerAddress);
-    }
+
     try {
       setIsApproving(true);
-      console.log('Checking allowance:', { allowance, amount });
       // Проверяем allowance
       if (!allowance || BigInt(allowance) < amount) {
-        console.log('Calling approve...');
         await writeContractAsync({
           address: padTokenAddress,
           abi: PAD_TOKEN_ABI,
@@ -158,11 +141,9 @@ export function StakingForm() {
         });
         toast({ title: 'Approve sent', description: 'Подтвердите разрешение в кошельке' });
         await refetchAllowance();
-        console.log('Approve confirmed');
       }
       setIsApproving(false);
       setIsStaking(true);
-      console.log('Calling createPosition...');
       try {
         await writeContractAsync({
           address: stakeManagerAddress,
@@ -203,7 +184,6 @@ export function StakingForm() {
       toast({ title: 'Staking transaction sent', description: 'Подтвердите транзакцию в кошельке' });
       setStakeAmount('');
       toast({ title: 'Staked!', description: 'Токены успешно застейканы' });
-      console.log('Staking confirmed');
     } catch (e: any) {
       setIsApproving(false);
       setIsStaking(false);
@@ -330,7 +310,7 @@ export function StakingForm() {
                       <div className="flex items-center">
                         {nftImage && (
                           <img
-                            src={`/assets/${tierFolders[safePosition.tierInfo?.name]}/${nftImage}`}
+                            src={nft.image || `/assets/${tierFolders[safePosition.tierInfo?.name]}/${nftImage}`}
                             alt="NFT"
                             className="w-12 h-12 object-cover rounded mr-3"
                           />
@@ -378,12 +358,6 @@ export function StakingForm() {
                       <Button
                         className="mt-2 bg-emerald-600 hover:bg-emerald-700 w-full"
                         onClick={async () => {
-                          console.log('Claim NFT clicked', safePosition.id, {
-                            address: STAKE_MANAGER_ADDRESS,
-                            abi: STAKE_MANAGER_ABI,
-                            functionName: 'mintNextNFT',
-                            args: [BigInt(safePosition.id)],
-                          });
                           try {
                             const result = await writeContractAsync({
                               address: STAKE_MANAGER_ADDRESS,
@@ -391,7 +365,6 @@ export function StakingForm() {
                               functionName: 'mintNextNFT',
                               args: [BigInt(safePosition.id)],
                             });
-                            console.log('mintNextNFT result:', result);
                             toast({ title: 'Claimed!', description: 'NFT успешно заминчен' });
                             await refetchPositions();
                           } catch (e: any) {

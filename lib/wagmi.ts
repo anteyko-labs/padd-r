@@ -20,10 +20,10 @@ export const sepoliaConfig = {
   },
   rpcUrls: {
     default: {
-      http: ['https://sepolia.infura.io/v3/YOUR_INFURA_KEY'],
+      http: ['https://sepolia.infura.io/v3/9c259df705904ba5b2cbd4a10d00e7df'],
     },
     public: {
-      http: ['https://sepolia.infura.io/v3/YOUR_INFURA_KEY'],
+      http: ['https://sepolia.infura.io/v3/9c259df705904ba5b2cbd4a10d00e7df'],
     },
   },
   blockExplorers: {

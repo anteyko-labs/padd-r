@@ -60,7 +60,6 @@ export function UserProfile() {
   }, [address]);
 
   const handleSave = async () => {
-    console.log('Save button clicked!');
     if (!address) return;
     setLoading(true);
     try {
