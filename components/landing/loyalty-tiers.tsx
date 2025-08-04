@@ -6,10 +6,13 @@ import { Button } from '@/components/ui/button';
 import { Crown, Star, Gem, Zap } from 'lucide-react';
 import { useWallet } from '@/hooks/use-wallet';
 import { useRouter } from 'next/navigation';
+import React from 'react';
+import { useState } from 'react';
 
 export function LoyaltyTiers() {
   const { isConnected, connectWallet, connectors } = useWallet();
   const router = useRouter();
+  const [loading, setLoading] = useState(false);
   const tiers = [
     {
       name: 'Bronze',
@@ -59,15 +62,19 @@ export function LoyaltyTiers() {
 
   const handleStartStaking = async (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
+    setLoading(true);
     if (!isConnected) {
       await connectWallet(connectors[0]?.id);
+      setLoading(false);
+      return;
     }
     router.push('/dashboard/stake');
+    setLoading(false);
   };
 
   return (
     <div>
-      <div className="text-center mb-12">
+      <div className="text-center mb-12 pt-8 md:pt-12">
         <h2 className="text-3xl md:text-4xl font-bold mb-4">Loyalty Tiers</h2>
         <p className="text-xl text-gray-400 max-w-2xl mx-auto">
           Stake longer, earn more. Unlock exclusive benefits and NFT rewards based on staking duration.
@@ -119,8 +126,9 @@ export function LoyaltyTiers() {
                 className="w-full bg-white/20 hover:bg-white/30 text-white border-0 font-semibold"
                 variant="outline"
                 onClick={handleStartStaking}
+                disabled={loading}
               >
-                Start Staking
+                {loading ? '...' : 'Start Staking'}
               </Button>
             </CardContent>
           </Card>

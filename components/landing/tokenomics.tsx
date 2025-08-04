@@ -62,7 +62,7 @@ export function Tokenomics() {
             <div className="space-y-6">
               <Card className="bg-gray-900/50 border-gray-800">
                 <CardHeader>
-                  <CardTitle className="text-2xl text-white">Token Information</CardTitle>
+                  <CardTitle className="text-xl md:text-2xl text-white">Token Information</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   {tokenInfo.map((info, index) => (
@@ -82,13 +82,14 @@ export function Tokenomics() {
                     Rewards are not guaranteed and may vary based on ecosystem development.
                   </p>
                   <div className="flex flex-col sm:flex-row gap-3">
-                    <Button 
-                      variant="outline" 
-                      className="border-emerald-600 text-emerald-400 hover:bg-emerald-600/10"
-                    >
-                      <ExternalLink className="mr-2" size={16} />
-                      Read Whitepaper
-                    </Button>
+                  <Button
+  variant="outline"
+  className="border-emerald-600 text-emerald-400 hover:bg-emerald-600/10"
+  onClick={() => window.open("https://paddock.gitbook.io/paddock-docs", "_blank")}
+>
+  <ExternalLink className="mr-2" size={16} />
+  Read Whitepaper
+</Button>
                     <Button 
                       variant="outline" 
                       className="border-emerald-600 text-emerald-400 hover:bg-emerald-600/10"

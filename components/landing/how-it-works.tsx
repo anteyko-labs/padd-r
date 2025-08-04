@@ -14,7 +14,7 @@ export function HowItWorks() {
     {
       icon: Shield,
       title: 'Stake',
-      description: 'Lock tokens for 6 months to 2.5+ years to unlock tiers',
+      description: 'Lock tokens for 3, 6, 9, 12 months to unlock tiers',
       color: 'from-emerald-500 to-emerald-600',
     },
     {
@@ -66,22 +66,22 @@ export function HowItWorks() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div className="text-center p-4 bg-amber-600/10 border border-amber-600/20 rounded-2xl">
             <div className="text-amber-400 font-bold text-lg mb-1">Bronze</div>
-            <div className="text-sm text-gray-300">6 months - 1 year</div>
+            <div className="text-sm text-gray-300">3 months</div>
             <div className="text-xs text-amber-400 mt-1">5% discount</div>
           </div>
           <div className="text-center p-4 bg-gray-600/10 border border-gray-600/20 rounded-2xl">
             <div className="text-gray-400 font-bold text-lg mb-1">Silver</div>
-            <div className="text-sm text-gray-300">1 - 1.5 years</div>
+            <div className="text-sm text-gray-300">6 months</div>
             <div className="text-xs text-gray-400 mt-1">7% discount</div>
           </div>
           <div className="text-center p-4 bg-yellow-600/10 border border-yellow-600/20 rounded-2xl">
             <div className="text-yellow-400 font-bold text-lg mb-1">Gold</div>
-            <div className="text-sm text-gray-300">1.5 - 2.5 years</div>
+            <div className="text-sm text-gray-300">9 months</div>
             <div className="text-xs text-yellow-400 mt-1">10% discount</div>
           </div>
           <div className="text-center p-4 bg-emerald-600/10 border border-emerald-600/20 rounded-2xl">
             <div className="text-emerald-400 font-bold text-lg mb-1">Platinum</div>
-            <div className="text-sm text-gray-300">2.5+ years</div>
+            <div className="text-sm text-gray-300">12 months</div>
             <div className="text-xs text-emerald-400 mt-1">12% discount</div>
           </div>
         </div>

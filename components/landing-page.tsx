@@ -32,6 +32,7 @@ export function LandingPage() {
         <HowItWorks />
         <UtilityHighlights />
         <LoyaltyTiers />
+        <div className="py-8 md:py-16" />
         <NFTMarketplace />
         <Roadmap />
         <Tokenomics />

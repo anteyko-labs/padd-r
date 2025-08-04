@@ -9,7 +9,7 @@ export function Footer() {
     {
       title: 'Resources',
       links: [
-        { name: 'Whitepaper', href: '#', icon: FileText },
+        { name: 'Whitepaper', href: 'https://paddock.gitbook.io/paddock-docs', icon: FileText },
         { name: 'Audit Report', href: '#', icon: FileText },
         { name: 'BscScan', href: '#', icon: ExternalLink },
         { name: 'PancakeSwap', href: '#', icon: ExternalLink },
@@ -27,10 +27,10 @@ export function Footer() {
     {
       title: 'Legal',
       links: [
-        { name: 'Terms of Use', href: '#', icon: FileText },
-        { name: 'Privacy Policy', href: '#', icon: FileText },
-        { name: 'Risk Disclosure', href: '#', icon: FileText },
-        { name: 'Cookie Policy', href: '#', icon: FileText },
+        { name: 'Terms of Use', href: 'https://paddock.gitbook.io/paddock-docs/legal/terms-of-use', icon: FileText },
+        { name: 'Privacy Policy', href: 'https://paddock.gitbook.io/paddock-docs/legal/privacy-policy', icon: FileText },
+        { name: 'Risk Disclosure', href: 'https://paddock.gitbook.io/paddock-docs/legal/risk-disclosure', icon: FileText },
+        { name: 'Cookie Policy', href: 'https://paddock.gitbook.io/paddock-docs/legal/cookie-policy', icon: FileText },
       ],
     },
   ];
