@@ -149,32 +149,10 @@ export function StakingForm() {
           address: stakeManagerAddress,
           abi: STAKE_MANAGER_ABI,
           functionName: 'createPosition',
-          args: [amount, months],
+          args: [amount, BigInt(months)],
         });
         await refetchBalance();
         await refetchPositions();
-        // --- Новый блок: получить и сохранить картинку для NFT ---
-        const tier = calculateTier(months, Number(stakeAmount));
-        if (address && tier) {
-          // Ждём появления нового NFT (после createPosition)
-          let newNFT = null;
-          for (let i = 0; i < 10; i++) {
-            await new Promise(r => setTimeout(r, 1000));
-            const updatedNFTs = await refetchNFTs?.();
-            if (updatedNFTs && Array.isArray(updatedNFTs)) {
-              // Ищем NFT с нужным tier и amount
-              newNFT = updatedNFTs.find((nft: any) => nft.tierInfo?.name === tier && String(nft.formattedAmountStaked) === String(stakeAmount));
-              if (newNFT) break;
-            }
-          }
-          if (newNFT && newNFT.tokenId) {
-            const image = await assignNFTImage(address, tier, newNFT.tokenId);
-            if (image) {
-              setUserNFTImages(prev => ({ ...prev, [`${address}_${tier}_${newNFT.tokenId}`]: image }));
-            }
-          }
-        }
-        // --- конец блока ---
       } catch (err) {
         if (typeof window !== 'undefined') {
           console.error('createPosition error:', err);
@@ -198,30 +176,7 @@ export function StakingForm() {
 
   // --- Удаляю калькулятор с часами и скидками, оставляю только отображение тира ---
 
-  // Автоматически назначать изображение для каждого NFT
-  useEffect(() => {
-    async function assignImages() {
-      if (!address || !nfts) return;
-      for (const nft of nfts) {
-        if (!nftImages[nft.tokenId]) {
-          try {
-            // 1. Получить или назначить изображение через API
-            const res = await axios.get(`/api/nft-image?address=${address}&tier=${nft.tierInfo?.name}&token_id=${nft.tokenId}`);
-            const image = res.data.image;
-            if (image) {
-              // 2. Сохранить связь, если это новое назначение
-              await axios.post('/api/nft-image', { address, tier: nft.tierInfo?.name, token_id: nft.tokenId, image });
-              setNftImages(prev => ({ ...prev, [nft.tokenId]: image }));
-            }
-          } catch (e) {
-            // Если уже есть изображение, просто пропускаем
-          }
-        }
-      }
-    }
-    assignImages();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [nfts, address]);
+
 
   const now = Date.now() / 1000;
   const currentPositions = positions.filter((pos: any) => pos.isActive && ((now - Number(pos.startTime)) / Number(pos.duration)) * 100 < 100);
@@ -310,7 +265,7 @@ export function StakingForm() {
                       <div className="flex items-center">
                         {nftImage && (
                           <img
-                            src={nft.image || `/assets/${tierFolders[safePosition.tierInfo?.name]}/${nftImage}`}
+                            src={`/assets/${tierFolders[safePosition.tierInfo?.name]}/${nftImage}`}
                             alt="NFT"
                             className="w-12 h-12 object-cover rounded mr-3"
                           />

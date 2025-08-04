@@ -86,7 +86,7 @@ export function UserProfile() {
   };
 
   // Получаем только активные позиции
-  const activePositions = (positions ?? []).filter(pos => pos.isActive && ((Date.now() / 1000) < (Number(pos.startTime) + Number(pos.duration))));
+  const activePositions = (positions ?? []).filter((pos: any) => pos.isActive && ((Date.now() / 1000) < (Number(pos.startTime) + Number(pos.duration))));
 
   // Helper to get tier key by name
   const getTierKeyByName = (name: string): number | undefined => {
