@@ -42,14 +42,19 @@ function parseUnits(amount: string, decimals: number = 18): bigint {
   return BigInt(whole + normalizedFraction);
 }
 
-// --- Новая функция для расчета тира ---
+// --- Функция для расчета тира (соответствует смарт-контракту) ---
 function calculateTier(months: number, amount: number): string {
   if (![3, 6, 9, 12].includes(months) || amount < 1000) return 'None';
-  const monthsNorm = months / 12;
-  const amountNorm = amount / 10000;
-  const tierScore = 0.65 * monthsNorm + 0.35 * amountNorm;
-  if (tierScore <= 0.2) return 'Bronze';
-  if (tierScore <= 0.45) return 'Silver';
+  
+  // Новая формула: k_score = (duration/max_duration(12))*0.6 + (amount/53333)*0.4
+  const timeScore = (months / 12) * 0.6; // (months/12)*0.6
+  const amountScore = (amount / 53333) * 0.4; // (amount/53333)*0.4
+  
+  const tierScore = timeScore + amountScore;
+  
+  // Пороги
+  if (tierScore <= 0.25) return 'Bronze';
+  if (tierScore <= 0.5) return 'Silver';
   if (tierScore <= 0.75) return 'Gold';
   return 'Platinum';
 }
