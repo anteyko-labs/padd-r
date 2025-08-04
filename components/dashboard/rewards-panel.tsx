@@ -54,6 +54,8 @@ export function RewardsPanel() {
     currentTier,
     refetch,
   } = nftBalance;
+  
+  console.log('RewardsPanel render:', { nfts, isLoadingNFTs, totalNFTs, nftBalance });
   const {
     positions = [],
     isLoading: isLoadingPositions,
@@ -92,22 +94,27 @@ export function RewardsPanel() {
 
   // Генерируем NFT карточки на основе реальных данных
   const generateNFTCards = () => {
+    console.log('generateNFTCards called:', { isLoadingNFTs, nftsLength: filteredNFTs.length, filteredNFTs });
+    
     if (isLoadingNFTs) {
       return <div className="text-center py-8 text-gray-400">Loading NFTs...</div>;
     }
-    if (nfts.length === 0) {
-      return <div className="text-center py-8 text-gray-400">No NFTs yet</div>;
+    if (filteredNFTs.length === 0) {
+      return <div className="text-center py-8 text-gray-400">No NFTs with selected filter</div>;
     }
-    return nfts.map((nft: any, index: number) => (
+    return filteredNFTs.map((nft: any, index: number) => (
       <motion.div
         key={index}
-        whileHover={{ scale: 1.02 }}
+        initial={{ opacity: 0, y: 40 }}
+        animate={{ opacity: 1, y: 0 }}
+        whileHover={{ scale: 1.03, boxShadow: '0 4px 32px #00ffb2' }}
         whileTap={{ scale: 0.98 }}
-        transition={{ type: 'spring', stiffness: 300 }}
+        transition={{ duration: 0.5, delay: index * 0.1, type: 'spring', stiffness: 300 }}
       >
         <Card 
-          className="bg-gray-900/50 border-gray-800 hover:border-emerald-500/50 transition-all duration-300 cursor-pointer overflow-hidden"
+          className="bg-gray-900/50 border-gray-800 hover:border-emerald-500/50 transition-all duration-300 cursor-pointer overflow-hidden card-hover"
           onClick={() => {
+            console.log('NFT card clicked:', nft);
             setSelectedNFT(nft);
             setIsModalOpen(true);
           }}
@@ -285,7 +292,7 @@ export function RewardsPanel() {
         <h2 className="text-2xl font-bold text-white mb-6">NFT Collection</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {isLoadingNFTs ? (
-            generateNFTCards()
+            <div className="text-center py-8 text-gray-400">Loading NFTs...</div>
           ) : filteredNFTs.length === 0 ? (
             <div className="col-span-full text-center py-12">
               <div className="w-24 h-24 bg-gray-800 rounded-full mx-auto mb-4 flex items-center justify-center">
@@ -295,63 +302,7 @@ export function RewardsPanel() {
               <p className="text-gray-400 mb-4">Попробуйте выбрать другой фильтр</p>
             </div>
           ) : (
-            filteredNFTs.map((nft: DashboardNFT, index: number) => (
-              <motion.div
-                key={index}
-                initial={{ opacity: 0, y: 40 }}
-                animate={{ opacity: 1, y: 0 }}
-                whileHover={{ scale: 1.03, boxShadow: '0 4px 32px #00ffb2' }}
-                transition={{ duration: 0.5, delay: index * 0.1 }}
-              >
-                <Card className="bg-gray-900/50 border-gray-800 card-hover overflow-hidden">
-                  <div className="relative">
-                    <img 
-                      src={nft.image || '/placeholder-nft.svg'} 
-                      alt={nft.tierInfo?.name} 
-                      className="w-full h-48 object-cover"
-                      onError={(e) => {
-                        e.currentTarget.src = '/placeholder-nft.svg';
-                      }}
-                    />
-                    <div className="absolute top-4 right-4">
-                      <Badge className={`${
-                        nft.tierInfo?.name === 'Platinum' ? 'bg-emerald-600' :
-                        nft.tierInfo?.name === 'Gold' ? 'bg-yellow-600' :
-                        nft.tierInfo?.name === 'Silver' ? 'bg-gray-600' : 'bg-amber-600'
-                      } text-white`}>
-                        {nft.tierInfo?.name}
-                      </Badge>
-                    </div>
-                    {nft.isInitialStakingNFT && (
-                      <div className="absolute top-4 left-4">
-                        <Badge className="bg-blue-600 text-white">
-                          Initial
-                        </Badge>
-                      </div>
-                    )}
-                  </div>
-                  <CardHeader>
-                    <CardTitle className="text-lg text-white">{nft.tierInfo?.name} NFT #{nft.tokenId}</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="grid grid-cols-2 gap-2 text-sm">
-                      <div className="flex items-center space-x-2">
-                        <span className="text-gray-400">Started: {nft.formattedStartDate}</span>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <span className="text-gray-400">Staked: {nft.formattedAmountStaked} PAD</span>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <span className="text-gray-400">Type: {nft.isInitialStakingNFT ? 'Initial Staking' : 'Monthly Reward'}</span>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <span className="text-gray-400">Next: {nft.formattedNextMintDate}</span>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </motion.div>
-            ))
+            generateNFTCards()
           )}
         </div>
       </div>
@@ -454,10 +405,20 @@ export function RewardsPanel() {
         nft={selectedNFT}
         isOpen={isModalOpen}
         onClose={() => {
+          console.log('Modal closing');
           setIsModalOpen(false);
           setSelectedNFT(null);
         }}
       />
+      
+      {/* Debug info */}
+      <div className="fixed bottom-4 right-4 bg-black/80 text-white p-4 rounded-lg text-sm">
+        <div>Total NFTs: {nfts.length}</div>
+        <div>Filtered NFTs: {filteredNFTs.length}</div>
+        <div>Filter: {filter}</div>
+        <div>Selected: {selectedNFT ? `#${selectedNFT.tokenId}` : 'None'}</div>
+        <div>Modal: {isModalOpen ? 'Open' : 'Closed'}</div>
+      </div>
     </div>
   );
 }

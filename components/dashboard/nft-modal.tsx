@@ -5,7 +5,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
-import { X, Download, ExternalLink, Share2, Copy, Check } from 'lucide-react';
+import { Download, ExternalLink, Share2, Copy, Check } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { DashboardNFT } from './rewards-panel';
 import { formatDate, formatTokenAmount } from '@/lib/contracts/config';
@@ -21,11 +21,13 @@ export function NFTModal({ nft, isOpen, onClose }: NFTModalProps) {
   const [copied, setCopied] = useState(false);
   const { toast } = useToast();
 
+  console.log('NFTModal render:', { nft, isOpen });
+
   if (!nft) return null;
 
   // Генерируем QR код для NFT ссылки
   const nftUrl = `${window.location.origin}/nft/${nft.tokenId}`;
-  const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(nftUrl)}`;
+  const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(nftUrl)}`;
 
   // Изображения для слайдера (основное изображение + QR код)
   const images = [
@@ -108,29 +110,24 @@ export function NFTModal({ nft, isOpen, onClose }: NFTModalProps) {
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-2xl bg-gray-900 border-gray-700 text-white">
         <DialogHeader>
-          <div className="flex items-center justify-between">
-            <DialogTitle className="text-xl font-bold text-white">
-              {nft.tierInfo?.name} NFT #{nft.tokenId}
-            </DialogTitle>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={onClose}
-              className="text-gray-400 hover:text-white"
-            >
-              <X size={20} />
-            </Button>
-          </div>
+          <DialogTitle className="text-xl font-bold text-white">
+            {nft.tierInfo?.name} NFT #{nft.tokenId}
+          </DialogTitle>
         </DialogHeader>
 
         <div className="space-y-6">
           {/* Image Slider */}
           <div className="relative">
-            <div className="relative h-80 bg-gray-800 rounded-lg overflow-hidden">
+
+            <div className={`relative rounded-lg overflow-hidden transition-all duration-300 ${
+              currentImageIndex === 0 ? 'h-96 bg-gray-800' : 'h-96 bg-white'
+            }`}>
               <img
                 src={images[currentImageIndex].src}
                 alt={images[currentImageIndex].alt}
-                className="w-full h-full object-cover"
+                className={`w-full h-full transition-all duration-300 ${
+                  currentImageIndex === 0 ? 'object-cover' : 'object-contain'
+                }`}
                 onError={(e) => {
                   e.currentTarget.src = '/placeholder-nft.svg';
                 }}
@@ -149,12 +146,16 @@ export function NFTModal({ nft, isOpen, onClose }: NFTModalProps) {
                 ))}
               </div>
 
-              {/* Image Labels */}
-              <div className="absolute top-4 left-4">
-                <Badge className="bg-black/50 text-white">
-                  {currentImageIndex === 0 ? 'NFT Image' : 'QR Code'}
-                </Badge>
-              </div>
+              {/* Image Labels - только для NFT изображения */}
+              {currentImageIndex === 0 && (
+                <div className="absolute top-4 left-4">
+                  <Badge className="bg-black/50 text-white">
+                    NFT Image
+                  </Badge>
+                </div>
+              )}
+              
+
             </div>
           </div>
 

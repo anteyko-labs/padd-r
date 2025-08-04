@@ -12,13 +12,16 @@ export function useNFTBalanceFromEvents() {
   const [error, setError] = useState<string | null>(null);
 
           useEffect(() => {
-          if (!address || !publicClient) {
-            return;
-          }
-          let cancelled = false;
-          async function fetchNFTs() {
-            setIsLoading(true);
-            setError(null);
+            console.log('useNFTBalanceFromEvents: useEffect triggered', { address, publicClient: !!publicClient });
+            if (!address || !publicClient) {
+              console.log('useNFTBalanceFromEvents: Missing address or publicClient');
+              return;
+            }
+            let cancelled = false;
+            async function fetchNFTs() {
+              console.log('useNFTBalanceFromEvents: Starting fetchNFTs');
+              setIsLoading(true);
+              setError(null);
       try {
         if (!publicClient) return;
         
@@ -107,11 +110,13 @@ export function useNFTBalanceFromEvents() {
                            } catch (e) {
                    // Silent error handling for individual NFT checks
                  }
-               }
-               
-               if (!cancelled) {
-                 setNfts(userNFTs);
-               }
+                             }
+              
+              console.log('useNFTBalanceFromEvents: Found NFTs:', userNFTs.length, userNFTs);
+              
+              if (!cancelled) {
+                setNfts(userNFTs);
+              }
       } catch (e: any) {
         console.error('Error fetching NFTs:', e);
         if (!cancelled) setError(e.message || 'Failed to fetch NFTs');
