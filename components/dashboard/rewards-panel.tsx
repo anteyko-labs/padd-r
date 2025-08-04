@@ -14,6 +14,9 @@ import { DashboardDataContext } from './layout';
 import { motion } from "framer-motion";
 import type { StakingPosition } from '@/lib/contracts/config';
 import { NFTModal } from './nft-modal';
+import { VoucherModal } from './voucher-modal';
+import { Voucher, getVouchersByTier } from '@/lib/contracts/config';
+import { useAccount } from 'wagmi';
 
 // Тип для NFT (расширенный)
 export type DashboardNFT = {
@@ -45,6 +48,7 @@ export type DashboardPosition = StakingPosition & {
 };
 
 export function RewardsPanel() {
+  const { address } = useAccount();
   const { nftBalance, stakingPositions } = useContext(DashboardDataContext);
   const {
     nfts = [],
@@ -64,6 +68,10 @@ export function RewardsPanel() {
   const [filter, setFilter] = useState<'active' | 'expired' | 'used' | 'transferred'>('active');
   const [selectedNFT, setSelectedNFT] = useState<DashboardNFT | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedVoucher, setSelectedVoucher] = useState<Voucher | null>(null);
+  const [isVoucherModalOpen, setIsVoucherModalOpen] = useState(false);
+  const [userVouchers, setUserVouchers] = useState<Voucher[]>([]);
+  const [vouchersLoading, setVouchersLoading] = useState(false);
 
   // Слушаем событие NFTMinted
   useEffect(() => {
@@ -204,13 +212,46 @@ export function RewardsPanel() {
     ));
   };
 
+  // Загружаем ваучеры пользователя
+  useEffect(() => {
+    async function fetchUserVouchers() {
+      if (!address) return;
+      
+      setVouchersLoading(true);
+      try {
+        const maxTier = nfts.length > 0 ? Math.max(...nfts.map((nft: DashboardNFT) => nft.tierLevel)) : 1;
+        const response = await fetch(`/api/vouchers?userId=${address}&tierLevel=${maxTier}`);
+        
+        if (response.ok) {
+          const data = await response.json();
+          setUserVouchers(data.vouchers || []);
+        } else {
+          // Если API недоступен, используем локальные ваучеры
+          const localVouchers = getVouchersByTier(maxTier);
+          setUserVouchers(localVouchers);
+        }
+      } catch (error) {
+        console.error('Error fetching vouchers:', error);
+        // Fallback к локальным ваучерам
+        const maxTier = nfts.length > 0 ? Math.max(...nfts.map((nft: DashboardNFT) => nft.tierLevel)) : 1;
+        const localVouchers = getVouchersByTier(maxTier);
+        setUserVouchers(localVouchers);
+      } finally {
+        setVouchersLoading(false);
+      }
+    }
+
+    fetchUserVouchers();
+  }, [address, nfts]);
+
   // Динамические ваучеры на основе NFT пользователя
-  const vouchers = nfts.map((nft: DashboardNFT) => ({
-    title: `${nft.tierInfo?.discount}% Restaurant Discount`,
-    description: `Valid for ${nft.tierInfo?.name} tier holders`,
-    validUntil: nft.formattedNextMintDate || '-',
-    status: 'Active' as const,
-    qrCode: nft.isTransferable,
+  const vouchers = userVouchers.map((voucher: Voucher) => ({
+    title: voucher.name,
+    description: voucher.description,
+    validUntil: 'Активен',
+    status: voucher.isUsed ? 'Used' as const : 'Active' as const,
+    qrCode: true,
+    voucher: voucher
   }));
 
   // Динамическая история наград
@@ -311,17 +352,25 @@ export function RewardsPanel() {
       <div>
         <h2 className="text-2xl font-bold text-white mb-6">Active Vouchers</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {vouchers.length === 0 ? (
-            <div className="col-span-full text-center py-12 text-gray-400">No active vouchers</div>
-          ) : vouchers.map((voucher: any, index: number) => (
+                     {vouchersLoading ? (
+             <div className="col-span-full text-center py-12 text-gray-400">Загрузка ваучеров...</div>
+           ) : vouchers.length === 0 ? (
+             <div className="col-span-full text-center py-12 text-gray-400">Нет активных ваучеров</div>
+           ) : vouchers.map((voucher: any, index: number) => (
             <motion.div
               key={index}
               initial={{ opacity: 0, y: 40 }}
               animate={{ opacity: 1, y: 0 }}
               whileHover={{ scale: 1.03, boxShadow: '0 4px 32px #00ffb2' }}
               transition={{ duration: 0.5, delay: index * 0.1 }}
+              onClick={() => {
+                if (voucher.voucher) {
+                  setSelectedVoucher(voucher.voucher);
+                  setIsVoucherModalOpen(true);
+                }
+              }}
             >
-              <Card className="bg-gray-900/50 border-gray-800 card-hover">
+              <Card className="bg-gray-900/50 border-gray-800 card-hover cursor-pointer">
                 <CardHeader>
                   <CardTitle className="text-lg text-white">{voucher.title}</CardTitle>
                   <Badge className={`w-fit ${voucher.status === 'Active' ? 'bg-emerald-600' : 'bg-gray-600'} text-white`}>
@@ -408,6 +457,16 @@ export function RewardsPanel() {
           console.log('Modal closing');
           setIsModalOpen(false);
           setSelectedNFT(null);
+        }}
+      />
+
+      {/* Voucher Modal */}
+      <VoucherModal
+        voucher={selectedVoucher}
+        isOpen={isVoucherModalOpen}
+        onClose={() => {
+          setIsVoucherModalOpen(false);
+          setSelectedVoucher(null);
         }}
       />
       
