@@ -13,9 +13,10 @@ import { NFT_FACTORY_ADDRESS } from '@/lib/contracts/config';
 import { DashboardDataContext } from './layout';
 import { motion } from "framer-motion";
 import type { StakingPosition } from '@/lib/contracts/config';
+import { NFTModal } from './nft-modal';
 
 // Тип для NFT (расширенный)
-type DashboardNFT = {
+export type DashboardNFT = {
   tokenId: number;
   positionId: bigint;
   amountStaked: bigint;
@@ -38,7 +39,7 @@ type DashboardNFT = {
   isInitialStakingNFT?: boolean;
 };
 
-type DashboardPosition = StakingPosition & {
+export type DashboardPosition = StakingPosition & {
   formattedNextMintDate?: string;
   formattedRewards?: string;
 };
@@ -59,6 +60,8 @@ export function RewardsPanel() {
     totalRewards = 0,
   } = stakingPositions;
   const [filter, setFilter] = useState<'active' | 'expired' | 'used' | 'transferred'>('active');
+  const [selectedNFT, setSelectedNFT] = useState<DashboardNFT | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   // Слушаем событие NFTMinted
   useEffect(() => {
@@ -96,57 +99,101 @@ export function RewardsPanel() {
       return <div className="text-center py-8 text-gray-400">No NFTs yet</div>;
     }
     return nfts.map((nft: any, index: number) => (
-      <Card key={index} className="bg-gray-900/50 border-gray-800 card-hover overflow-hidden">
-        <div className="relative">
-          <img 
-            src={nft.image || '/placeholder-nft.svg'} 
-            alt={nft.tierInfo?.name} 
-            className="w-full h-48 object-cover"
-            onError={(e) => {
-              e.currentTarget.src = '/placeholder-nft.svg';
-            }}
-          />
-          <div className="absolute top-4 right-4">
-            <Badge className={`${
-              nft.tierInfo?.name === 'Platinum' ? 'bg-emerald-600' :
-              nft.tierInfo?.name === 'Gold' ? 'bg-yellow-600' :
-              nft.tierInfo?.name === 'Silver' ? 'bg-gray-600' : 'bg-amber-600'
-            } text-white`}>
-              {nft.tierInfo?.name}
-            </Badge>
-          </div>
-          {nft.isInitialStakingNFT && (
-            <div className="absolute top-4 left-4">
-              <Badge className="bg-blue-600 text-white">
-                Initial
+      <motion.div
+        key={index}
+        whileHover={{ scale: 1.02 }}
+        whileTap={{ scale: 0.98 }}
+        transition={{ type: 'spring', stiffness: 300 }}
+      >
+        <Card 
+          className="bg-gray-900/50 border-gray-800 hover:border-emerald-500/50 transition-all duration-300 cursor-pointer overflow-hidden"
+          onClick={() => {
+            setSelectedNFT(nft);
+            setIsModalOpen(true);
+          }}
+        >
+          <div className="relative group">
+            <img 
+              src={nft.image || '/placeholder-nft.svg'} 
+              alt={nft.tierInfo?.name} 
+              className="w-full h-48 object-cover transition-transform duration-300 group-hover:scale-105"
+              onError={(e) => {
+                e.currentTarget.src = '/placeholder-nft.svg';
+              }}
+            />
+            
+            {/* Overlay with action buttons */}
+            <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
+              <div className="flex space-x-2">
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  className="bg-white/20 hover:bg-white/30 text-white border-white/30"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setSelectedNFT(nft);
+                    setIsModalOpen(true);
+                  }}
+                >
+                  <Eye className="w-4 h-4 mr-1" />
+                  View
+                </Button>
+              </div>
+            </div>
+
+            {/* Badges */}
+            <div className="absolute top-4 right-4">
+              <Badge className={`${
+                nft.tierInfo?.name === 'Platinum' ? 'bg-emerald-600' :
+                nft.tierInfo?.name === 'Gold' ? 'bg-yellow-600' :
+                nft.tierInfo?.name === 'Silver' ? 'bg-gray-600' : 'bg-amber-600'
+              } text-white`}>
+                {nft.tierInfo?.name}
               </Badge>
             </div>
-          )}
-        </div>
-        <CardHeader>
-          <CardTitle className="text-lg text-white">{nft.tierInfo?.name} NFT #{nft.tokenId}</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-2 gap-2 text-sm">
-            <div className="flex items-center space-x-2">
-              <span className="text-gray-400">Started: {nft.formattedStartDate}</span>
-            </div>
-            <div className="flex items-center space-x-2">
-              <span className="text-gray-400">Staked: {nft.formattedAmountStaked} PAD</span>
-            </div>
-            <div className="flex items-center space-x-2">
-              <span className="text-gray-400">Type: {nft.isInitialStakingNFT ? 'Initial Staking' : 'Monthly Reward'}</span>
-            </div>
-            <div className="flex items-center space-x-2">
-              <span className="text-gray-400">Next: {nft.formattedNextMintDate}</span>
-            </div>
+            {nft.isInitialStakingNFT && (
+              <div className="absolute top-4 left-4">
+                <Badge className="bg-blue-600 text-white">
+                  Initial
+                </Badge>
+              </div>
+            )}
           </div>
-          {/* Debug info */}
-          <div className="text-xs text-gray-500 mt-2">
-            Image URL: {nft.image || 'No image'}
-          </div>
-        </CardContent>
-      </Card>
+          
+          <CardHeader className="pb-3">
+            <CardTitle className="text-lg text-white flex items-center justify-between">
+              <span>{nft.tierInfo?.name} NFT #{nft.tokenId}</span>
+              <Download className="w-4 h-4 text-gray-400" />
+            </CardTitle>
+          </CardHeader>
+          
+          <CardContent className="space-y-3">
+            <div className="grid grid-cols-2 gap-2 text-sm">
+              <div>
+                <span className="text-gray-400">Staked:</span>
+                <div className="text-emerald-400 font-semibold">{nft.formattedAmountStaked} PAD</div>
+              </div>
+              <div>
+                <span className="text-gray-400">Started:</span>
+                <div className="text-white">{nft.formattedStartDate}</div>
+              </div>
+              <div>
+                <span className="text-gray-400">Type:</span>
+                <div className="text-white">{nft.isInitialStakingNFT ? 'Initial' : 'Monthly'}</div>
+              </div>
+              <div>
+                <span className="text-gray-400">Next:</span>
+                <div className="text-white">{nft.formattedNextMintDate}</div>
+              </div>
+            </div>
+            
+            {/* Action hint */}
+            <div className="text-xs text-gray-500 text-center pt-2 border-t border-gray-700">
+              Click to view details and import to wallet
+            </div>
+          </CardContent>
+        </Card>
+      </motion.div>
     ));
   };
 
@@ -401,6 +448,16 @@ export function RewardsPanel() {
           </div>
         </CardContent>
       </Card>
+
+      {/* NFT Modal */}
+      <NFTModal
+        nft={selectedNFT}
+        isOpen={isModalOpen}
+        onClose={() => {
+          setIsModalOpen(false);
+          setSelectedNFT(null);
+        }}
+      />
     </div>
   );
 }
